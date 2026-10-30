@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 350">
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a8"/><stop offset=".5" stop-color="#e8b53a"/><stop offset="1" stop-color="#9a6410"/></linearGradient>
+<radialGradient id="bg" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#7a1838"/><stop offset=".6" stop-color="#3e0c26"/><stop offset="1" stop-color="#1a0614"/></radialGradient>
+<pattern id="lat" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0H26M0 0V26" stroke="#e8b53a" stroke-width="1" opacity=".28"/><circle cx="13" cy="13" r="2.2" fill="#e8b53a" opacity=".35"/></pattern>
+</defs>
+<rect x="2" y="2" width="246" height="346" rx="18" fill="url(#bg)" stroke="url(#gold)" stroke-width="4"/>
+<rect x="14" y="14" width="222" height="322" rx="10" fill="url(#lat)" stroke="url(#gold)" stroke-width="2"/>
+<rect x="24" y="24" width="202" height="302" rx="6" fill="none" stroke="#e8b53a" stroke-width="1" opacity=".6"/>
+<g transform="translate(125 175)">
+<circle r="74" fill="#2a0818" stroke="url(#gold)" stroke-width="4"/><circle r="64" fill="none" stroke="#e8b53a" stroke-width="1.4" stroke-dasharray="3 5"/>
+<g fill="#e8b53a" opacity=".5"><path d="M0 -72L5 -58H-5Z"/><path d="M0 72L5 58H-5Z"/><path d="M-72 0L-58 5V-5Z"/><path d="M72 0L58 5V-5Z"/></g>
+<path d="M-38 14L-44 -22L-22 -4L0 -36L22 -4L44 -22L38 14Z" fill="url(#gold)" stroke="#6a4a10" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-38" y="14" width="76" height="12" rx="3" fill="url(#gold)" stroke="#6a4a10" stroke-width="2"/>
+<circle cx="0" cy="-30" r="4.5" fill="#fff"/><circle cx="-44" cy="-24" r="4" fill="#fff"/><circle cx="44" cy="-24" r="4" fill="#fff"/>
+<circle cx="0" cy="20" r="4.5" fill="#d02848"/><circle cx="-20" cy="20" r="3.4" fill="#2f6fd1"/><circle cx="20" cy="20" r="3.4" fill="#1fb06a"/>
+<text y="52" text-anchor="middle" font-family="Cinzel,Georgia,'Times New Roman',serif" font-size="20" font-weight="700" letter-spacing="6" fill="#f3d27a">COUP</text>
+</g>
+<g fill="#e8b53a"><path d="M40 40l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/><path d="M210 40l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/><path d="M40 310l4 8 8 4-8 4-4 8-4-8-8-4 8-4z" transform="translate(0 -24)"/><path d="M210 310l4 8 8 4-8 4-4 8-4-8-8-4 8-4z" transform="translate(0 -24)"/></g>
+</svg>
