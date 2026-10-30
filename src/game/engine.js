@@ -1,5 +1,6 @@
-// Engine Coup — fungsi murni. State disimpan oleh host, semua gerakan divalidasi di sini.
-import { CHARS, CHAR_INFO, ACTIONS } from './rules.js';
+// Engine Coup — fungsi murni. Dijalankan oleh "Game Master" (server / ruangan lokal); pemain tidak pernah
+// memegang state asli. Log & error memakai kunci terstruktur supaya bisa diterjemahkan di UI.
+import { CHARS, ACTIONS, normalizeSettings } from './rules.js';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
@@ -11,7 +12,8 @@ export function shuffle(arr, rnd = Math.random) {
   return arr;
 }
 
-export function createGame(names, rnd = Math.random) {
+// Dek: akhir array = ATAS dek (diambil dengan pop), indeks 0 = BAWAH dek (unshift).
+export function createGame(names, rnd = Math.random, settings) {
   const deck = [];
   for (const c of CHARS) for (let i = 0; i < 3; i++) deck.push(c);
   shuffle(deck, rnd);
@@ -26,8 +28,9 @@ export function createGame(names, rnd = Math.random) {
   }));
   const first = Math.floor(rnd() * players.length);
   if (players.length === 2) players[first].coins = 1; // aturan resmi 2 pemain
-  return {
+  const s = {
     seq: 0,
+    settings: normalizeSettings(settings),
     players,
     deck,
     turn: first,
@@ -39,19 +42,21 @@ export function createGame(names, rnd = Math.random) {
     exch: null,
     winner: null,
     flashes: [],
-    log: [{ t: `Permainan dimulai! Giliran pertama: ${players[first].name}.`, k: 'sys' }],
+    log: [],
   };
+  say(s, 'sys', 'start', { name: players[first].name });
+  return s;
 }
 
 /* ---------- helper ---------- */
 const aliveIdx = (s) => s.players.map((p, i) => (p.alive ? i : -1)).filter((i) => i >= 0);
 const nm = (s, i) => s.players[i].name;
-const cn = (c) => CHAR_INFO[c].name;
 const hidden = (s, p) => s.players[p].cards.filter((c) => !c.revealed);
+const classic = (s) => s.settings.discard === 'classic';
 
-function say(s, t, k = 'info') {
-  s.log.push({ t, k });
-  if (s.log.length > 100) s.log.shift();
+function say(s, k, m, a = {}) {
+  s.log.push({ k, m, a });
+  if (s.log.length > 120) s.log.shift();
 }
 
 export function pendingResponders(s) {
@@ -74,7 +79,7 @@ function checkEnd(s) {
     s.winner = alive[0] ?? null;
     s.act = s.block = s.lose = s.exch = null;
     s.passed = [];
-    if (s.winner !== null) say(s, `🏆 ${nm(s, s.winner)} memenangkan permainan!`, 'sys');
+    if (s.winner !== null) say(s, 'sys', 'win', { name: nm(s, s.winner) });
     return true;
   }
   return false;
@@ -88,19 +93,22 @@ function endTurn(s) {
   do { s.turn = (s.turn + 1) % n; } while (!s.players[s.turn].alive);
   s.phase = 'action';
   const p = s.players[s.turn];
-  say(s, p.coins >= 10 ? `Giliran ${p.name} — wajib Kudeta!` : `Giliran ${p.name}.`, 'turn');
+  say(s, 'turn', p.coins >= 10 ? 'turnMust' : 'turn', { name: p.name });
 }
 
 function revealCard(s, p, idx) {
   const pl = s.players[p];
   const card = pl.cards[idx];
-  card.revealed = true;
-  s.flashes.push({ kind: 'lose', player: p, char: card.char });
-  say(s, `${pl.name} kehilangan pengaruh: ${cn(card.char)}.`, 'loss');
+  const secret = s.settings.discard === 'bottomSecret';
+  if (classic(s)) card.revealed = true;
+  else { pl.cards.splice(idx, 1); s.deck.unshift(card.char); } // masuk ke BAWAH dek
+  s.flashes.push({ kind: 'lose', player: p, char: card.char, secret, toDeck: !classic(s) });
+  if (secret) say(s, 'loss', 'loseSecret', { name: pl.name });
+  else say(s, 'loss', 'lose', { name: pl.name, char: card.char });
   if (!pl.cards.some((c) => !c.revealed)) {
     pl.alive = false;
     pl.coins = 0;
-    say(s, `${pl.name} tersingkir!`, 'loss');
+    say(s, 'loss', 'out', { name: pl.name });
   }
 }
 
@@ -145,7 +153,7 @@ function checkWindow(s) {
   if (s.phase === 'challenge') return afterActionAccepted(s);
   if (s.phase === 'block') return resolveAction(s);
   if (s.phase === 'blockChallenge') {
-    say(s, `Blokir ${nm(s, s.block.blocker)} berhasil.`, 'info');
+    say(s, 'info', 'blockOk', { name: nm(s, s.block.blocker) });
     return proceed(s, 'cancelNoRefund');
   }
 }
@@ -155,15 +163,14 @@ function resolveChallenge(s, challenger, challenged, char, onChallengerLoses, on
   const idx = p.cards.findIndex((c) => !c.revealed && c.char === char);
   const truthful = idx >= 0;
   s.flashes.push({ kind: 'challenge', challenger, challenged, char, truthful });
-  say(s, `${nm(s, challenger)} menantang ${nm(s, challenged)}!`, 'challenge');
+  say(s, 'challenge', 'challenge', { a: nm(s, challenger), b: nm(s, challenged) });
   if (truthful) {
-    say(s, `${nm(s, challenged)} memang punya ${cn(char)}! Kartu dikocok ulang dan diganti.`, 'challenge');
-    s.deck.push(char);
-    shuffle(s.deck);
-    p.cards[idx].char = s.deck.pop();
+    say(s, 'challenge', 'truth', { name: nm(s, challenged), char });
+    if (classic(s)) { s.deck.push(char); shuffle(s.deck); } else s.deck.unshift(char); // kartu bukti → bawah dek
+    p.cards[idx].char = s.deck.pop(); // ambil kartu baru dari ATAS dek
     startLose(s, challenger, onChallengerLoses);
   } else {
-    say(s, `${nm(s, challenged)} berbohong, tidak punya ${cn(char)}!`, 'challenge');
+    say(s, 'challenge', 'lie', { name: nm(s, challenged), char });
     startLose(s, challenged, onChallengedLoses);
   }
 }
@@ -175,38 +182,38 @@ function resolveAction(s) {
   switch (a.type) {
     case 'income':
       actor.coins += 1;
-      say(s, `${actor.name} mendapat 1 koin.`);
+      say(s, 'info', 'income', { name: actor.name });
       return endTurn(s);
     case 'foreignAid':
       actor.coins += 2;
-      say(s, `${actor.name} mendapat 2 koin dari Bantuan Asing.`);
+      say(s, 'info', 'aid', { name: actor.name });
       return endTurn(s);
     case 'tax':
       actor.coins += 3;
-      say(s, `${actor.name} memungut 3 koin pajak.`);
+      say(s, 'info', 'tax', { name: actor.name });
       return endTurn(s);
     case 'coup':
       if (!t.alive) return endTurn(s);
-      say(s, `${actor.name} mengudeta ${t.name}!`, 'loss');
+      say(s, 'loss', 'coup', { a: actor.name, b: t.name });
       return startLose(s, a.target, 'endTurn');
     case 'assassinate':
       if (!t.alive) return endTurn(s);
-      say(s, `${actor.name} membunuh pengaruh ${t.name}!`, 'loss');
+      say(s, 'loss', 'assassinate', { a: actor.name, b: t.name });
       return startLose(s, a.target, 'endTurn');
     case 'steal': {
       if (!t.alive) return endTurn(s);
       const n = Math.min(2, t.coins);
       t.coins -= n;
       actor.coins += n;
-      say(s, `${actor.name} mencuri ${n} koin dari ${t.name}.`);
+      say(s, 'info', 'steal', { a: actor.name, b: t.name, n });
       return endTurn(s);
     }
     case 'exchange': {
       const own = hidden(s, a.actor).map((c) => c.char);
-      const drawn = [s.deck.pop(), s.deck.pop()];
+      const drawn = [s.deck.pop(), s.deck.pop()]; // dari ATAS dek
       s.phase = 'exchange';
       s.exch = { options: [...own, ...drawn], keep: own.length };
-      say(s, `${actor.name} menukar kartu dengan dek.`);
+      say(s, 'info', 'exchange', { name: actor.name });
       return;
     }
     default: throw new Error('aksi tidak dikenal');
@@ -218,30 +225,28 @@ export function applyMove(state, m) {
   const s = clone(state);
   s.flashes = [];
   const bad = (error) => ({ ok: false, error, state });
-  if (s.phase === 'over') return bad('Permainan sudah selesai.');
+  if (s.phase === 'over') return bad('err.over');
   const by = m.by;
-  if (!Number.isInteger(by) || !s.players[by] || !s.players[by].alive) return bad('Pemain tidak valid.');
+  if (!Number.isInteger(by) || !s.players[by] || !s.players[by].alive) return bad('err.badPlayer');
 
   switch (m.type) {
     case 'action': {
-      if (s.phase !== 'action' || by !== s.turn) return bad('Bukan giliranmu.');
+      if (s.phase !== 'action' || by !== s.turn) return bad('err.notTurn');
       const def = ACTIONS[m.action];
-      if (!def) return bad('Aksi tidak dikenal.');
+      if (!def) return bad('err.badAction');
       const me = s.players[by];
-      if (me.coins >= 10 && def.id !== 'coup') return bad('Kamu punya 10+ koin: wajib Kudeta!');
-      if (me.coins < def.cost) return bad('Koin tidak cukup.');
+      if (me.coins >= 10 && def.id !== 'coup') return bad('err.mustCoup');
+      if (me.coins < def.cost) return bad('err.noCoins');
       let target = null;
       if (def.target) {
         target = m.target;
-        if (!Number.isInteger(target) || target === by || !s.players[target]?.alive) return bad('Target tidak valid.');
+        if (!Number.isInteger(target) || target === by || !s.players[target]?.alive) return bad('err.badTarget');
       }
       me.coins -= def.cost;
       s.act = { actor: by, type: def.id, target, claim: def.claim, cost: def.cost };
       s.block = null;
       s.passed = [];
-      const tgt = target !== null ? ` → ${nm(s, target)}` : '';
-      const claim = def.claim ? ` (mengaku ${cn(def.claim)})` : '';
-      say(s, `${me.name}: ${def.name}${tgt}${claim}`, 'action');
+      say(s, 'action', 'action', { name: me.name, action: def.id, target: target !== null ? nm(s, target) : null, claim: def.claim });
       if (def.claim) {
         s.phase = 'challenge';
         checkWindow(s);
@@ -249,37 +254,37 @@ export function applyMove(state, m) {
       break;
     }
     case 'pass': {
-      if (!['challenge', 'block', 'blockChallenge'].includes(s.phase)) return bad('Tidak ada yang perlu dijawab.');
-      if (!pendingResponders(s).includes(by)) return bad('Kamu tidak perlu menjawab.');
+      if (!['challenge', 'block', 'blockChallenge'].includes(s.phase)) return bad('err.nothingToAnswer');
+      if (!pendingResponders(s).includes(by)) return bad('err.notPending');
       s.passed.push(by);
       checkWindow(s);
       break;
     }
     case 'challenge': {
       if (s.phase === 'challenge') {
-        if (!pendingResponders(s).includes(by)) return bad('Kamu tidak bisa menantang.');
+        if (!pendingResponders(s).includes(by)) return bad('err.cantChallenge');
         resolveChallenge(s, by, s.act.actor, s.act.claim, 'afterActionTruth', 'cancelRefund');
       } else if (s.phase === 'blockChallenge') {
-        if (!pendingResponders(s).includes(by)) return bad('Kamu tidak bisa menantang.');
+        if (!pendingResponders(s).includes(by)) return bad('err.cantChallenge');
         resolveChallenge(s, by, s.block.blocker, s.block.char, 'cancelNoRefund', 'resolveAction');
-      } else return bad('Tidak ada yang bisa ditantang.');
+      } else return bad('err.cantChallenge');
       break;
     }
     case 'block': {
-      if (s.phase !== 'block') return bad('Tidak bisa memblokir sekarang.');
-      if (!pendingResponders(s).includes(by)) return bad('Kamu tidak bisa memblokir.');
-      if (!ACTIONS[s.act.type].blockedBy.includes(m.char)) return bad('Karakter itu tidak bisa memblokir.');
+      if (s.phase !== 'block') return bad('err.cantBlockNow');
+      if (!pendingResponders(s).includes(by)) return bad('err.cantBlock');
+      if (!ACTIONS[s.act.type].blockedBy.includes(m.char)) return bad('err.badBlockChar');
       s.block = { blocker: by, char: m.char };
       s.phase = 'blockChallenge';
       s.passed = [];
-      say(s, `${nm(s, by)} memblokir dengan ${cn(m.char)}!`, 'block');
+      say(s, 'block', 'block', { name: nm(s, by), char: m.char });
       checkWindow(s);
       break;
     }
     case 'lose': {
-      if (s.phase !== 'lose' || s.lose.player !== by) return bad('Kamu tidak perlu membuang kartu.');
+      if (s.phase !== 'lose' || s.lose.player !== by) return bad('err.noLose');
       const card = s.players[by].cards[m.index];
-      if (!card || card.revealed) return bad('Kartu tidak valid.');
+      if (!card || card.revealed) return bad('err.badCard');
       const next = s.lose.next;
       s.lose = null;
       revealCard(s, by, m.index);
@@ -287,30 +292,29 @@ export function applyMove(state, m) {
       break;
     }
     case 'exchange': {
-      if (s.phase !== 'exchange' || by !== s.act.actor) return bad('Bukan giliranmu menukar.');
+      if (s.phase !== 'exchange' || by !== s.act.actor) return bad('err.notExchanger');
       const keep = m.keep;
       const { options, keep: k } = s.exch;
       if (!Array.isArray(keep) || keep.length !== k || new Set(keep).size !== k ||
-        keep.some((i) => !Number.isInteger(i) || i < 0 || i >= options.length)) return bad('Pilihan kartu tidak valid.');
+        keep.some((i) => !Number.isInteger(i) || i < 0 || i >= options.length)) return bad('err.badKeep');
       const kept = keep.map((i) => options[i]);
       const back = options.filter((_, i) => !keep.includes(i));
       const slots = s.players[by].cards.filter((c) => !c.revealed);
       slots.forEach((c, i) => { c.char = kept[i]; });
-      s.deck.push(...back);
-      shuffle(s.deck);
+      if (classic(s)) { s.deck.push(...back); shuffle(s.deck); } else s.deck.unshift(...back); // → BAWAH dek
       s.exch = null;
-      say(s, `${nm(s, by)} selesai menukar kartu.`);
+      say(s, 'info', 'exchangeDone', { name: nm(s, by) });
       endTurn(s);
       break;
     }
     default:
-      return bad('Gerakan tidak dikenal.');
+      return bad('err.unknownMove');
   }
   s.seq += 1;
   return { ok: true, state: s };
 }
 
-// Tampilan untuk satu pemain: kartu lawan yang belum terbuka disembunyikan.
+// Tampilan untuk satu pemain: kartu lawan yang belum terbuka & isi dek TIDAK ikut dikirim.
 export function viewFor(s, seat) {
   const v = clone(s);
   v.deckCount = v.deck.length;
@@ -319,12 +323,12 @@ export function viewFor(s, seat) {
     p.cards = p.cards.map((c) => (c.revealed || i === seat ? c : { char: null, revealed: false }));
   });
   if (v.exch && !(v.act && v.act.actor === seat)) v.exch = { options: v.exch.options.map(() => null), keep: v.exch.keep };
+  v.flashes = v.flashes.map((f) => (f.kind === 'lose' && f.secret && f.player !== seat ? { ...f, char: null } : f));
   v.you = seat;
   return v;
 }
 
 export function whoMustAct(s) {
-  // seat yang sedang ditunggu (untuk UI & bot)
   switch (s.phase) {
     case 'action': return [s.turn];
     case 'lose': return [s.lose.player];
@@ -335,7 +339,7 @@ export function whoMustAct(s) {
 }
 
 export function knownCopies(s, seat, char) {
-  // jumlah kopi karakter yang pasti diketahui `seat`: kartu terbuka + kartu di tangannya
+  // kopi karakter yang pasti diketahui `seat`: kartu terbuka + kartu di tangannya
   let n = 0;
   s.players.forEach((p, i) => p.cards.forEach((c) => {
     if (c.char === char && (c.revealed || i === seat)) n++;

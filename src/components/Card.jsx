@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CHAR_INFO } from '../game/rules.js';
+import { useT } from '../i18n/index.js';
 
 export const asset = (name) => `${import.meta.env.BASE_URL}cards/${name}.png`;
 // easing "bertahap" supaya gerakan terasa seperti animasi pixel/sprite
+export const uiAsset = (name) => `${import.meta.env.BASE_URL}ui/${name}.png`;
 export const stepped = (n) => (t) => Math.floor(t * n) / n;
 
 /**
@@ -11,6 +13,7 @@ export const stepped = (n) => (t) => Math.floor(t * n) / n;
  * faceUp: tampil depan. dead: pengaruh sudah terbuka/hilang (abu-abu + tengkorak).
  */
 export default function Card({ char, faceUp = true, dead = false, size = 'md', selectable = false, selected = false, onClick, delay = 0, deal = true, tilt = 0 }) {
+  const t = useT();
   const info = char ? CHAR_INFO[char] : null;
   const showFront = faceUp && !!char;
   const cls = ['card', size, selectable && 'selectable', selected && 'selected', dead && 'dead'].filter(Boolean).join(' ');
@@ -35,7 +38,7 @@ export default function Card({ char, faceUp = true, dead = false, size = 'md', s
             <>
               <div className="cname">{info.name}</div>
               <div className="cart"><img src={asset(char)} alt={info.name} draggable={false} /></div>
-              <div className="ctext">{info.short}</div>
+              <div className="ctext">{t(`char.${char}.short`)}</div>
             </>
           )}
           {dead && (

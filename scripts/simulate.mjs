@@ -1,6 +1,7 @@
 // Uji acak: mainkan ribuan game penuh dengan bot, cek invariants & tidak ada deadlock.
 import { createGame, applyMove, viewFor, whoMustAct } from '../src/game/engine.js';
 import { botMove } from '../src/game/bot.js';
+import { DISCARD_MODES } from '../src/game/rules.js';
 
 function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
@@ -9,7 +10,8 @@ const winsBySeat = {};
 for (let g = 0; g < 3000; g++) {
   const rnd = mulberry(g + 1);
   const n = 2 + (g % 5);
-  let s = createGame(Array.from({ length: n }, (_, i) => 'P' + i), rnd);
+  const mode = DISCARD_MODES[g % 3];
+  let s = createGame(Array.from({ length: n }, (_, i) => 'P' + i), rnd, { discard: mode });
   let steps = 0;
   while (s.phase !== 'over') {
     // invariant: 15 kartu total
@@ -30,6 +32,15 @@ for (let g = 0; g < 3000; g++) {
       const v = viewFor(s, seatV);
       v.players.forEach((p, i) => p.cards.forEach((c) => { if (!c.revealed && i !== seatV && c.char !== null) throw new Error('bocor!'); }));
       if (v.deck) throw new Error('dek bocor');
+      if (mode === 'bottomSecret') {
+        v.flashes.forEach((f) => { if (f.kind === 'lose' && f.player !== seatV && f.char !== null) throw new Error('kartu rahasia bocor di flash'); });
+        s.log.forEach((l) => { if (l.m === 'loseSecret' && l.a.char) throw new Error('kartu rahasia bocor di log'); });
+      }
+      if (mode === 'bottomSecret') {
+        v.flashes.forEach((f) => { if (f.kind === 'lose' && f.player !== seatV && f.char !== null) throw new Error('flash rahasia bocor'); });
+        v.log.forEach((l) => { if (l.m === 'loseSecret' && l.a.char) throw new Error('log rahasia bocor'); });
+      }
+      if (mode !== 'classic' && v.players.some((p) => p.cards.some((c) => c.revealed))) throw new Error('mode bottom tak boleh ada kartu terbuka');
     }
     if (++steps > 3000) throw new Error('terlalu panjang game ' + g);
   }
@@ -41,8 +52,8 @@ for (let g = 0; g < 3000; g++) {
 console.log(`OK: ${games} game, rata-rata ${(totalSteps / games).toFixed(1)} langkah (maks ${maxSteps}), ${challenges} tantangan`);
 
 // --- tes aturan spesifik ---
-function fixed(cards, coins) {
-  const s = createGame(['A', 'B', 'C'], () => 0.0);
+function fixed(cards, coins, settings = { discard: 'classic' }) {
+  const s = createGame(['A', 'B', 'C'], () => 0.0, settings);
   s.turn = 0;
   cards.forEach((pair, i) => { s.players[i].cards = pair.map((ch) => ({ char: ch, revealed: false })); });
   coins.forEach((c, i) => { s.players[i].coins = c; });
@@ -133,4 +144,29 @@ s = fixed([['captain', 'captain'], ['duke', 'duke'], ['contessa', 'contessa']], 
 assert(!applyMove(s, { type: 'action', by: 1, action: 'income' }).ok, 'bukan giliran');
 assert(!applyMove(s, { type: 'action', by: 0, action: 'coup', target: 1 }).ok, 'koin kurang');
 assert(!applyMove(s, { type: 'action', by: 0, action: 'steal', target: 0 }).ok, 'target diri sendiri');
+
+// 11) mode bottom: kartu hilang masuk dasar dek & diambil paling akhir
+s = fixed([['captain', 'captain'], ['duke', 'assassin'], ['contessa', 'contessa']], [10, 2, 2], { discard: 'bottom' });
+const deckBefore = s.deck.length, top = s.deck[s.deck.length - 1];
+s = mv(s, { type: 'action', by: 0, action: 'coup', target: 1 });
+s = mv(s, { type: 'lose', by: 1, index: 1 }); // buang assassin
+assert(s.players[1].cards.length === 1 && s.deck.length === deckBefore + 1, 'kartu pindah ke dek');
+assert(s.deck[0] === 'assassin' && s.deck[s.deck.length - 1] === top, 'masuk dasar dek, bukan atas');
+assert(s.flashes[0].toDeck && !s.flashes[0].secret, 'flash toDeck publik');
+// 12) mode bottomSecret: tidak ada yang tahu kartunya
+s = fixed([['captain', 'captain'], ['duke', 'assassin'], ['contessa', 'contessa']], [10, 2, 2], { discard: 'bottomSecret' });
+s = mv(s, { type: 'action', by: 0, action: 'coup', target: 1 });
+s = mv(s, { type: 'lose', by: 1, index: 0 });
+const v2 = viewFor(s, 2);
+assert(v2.flashes[0].char === null && !JSON.stringify(v2.log).includes('duke'), 'rahasia tidak bocor ke pemain lain');
+assert(viewFor(s, 1).flashes[0].char === 'duke', 'pemilik tahu');
+// 13) mode bottom: exchange mengembalikan ke dasar dek
+s = fixed([['duke', 'captain'], ['duke', 'duke'], ['contessa', 'contessa']], [2, 2, 2], { discard: 'bottom' });
+s = mv(s, { type: 'action', by: 0, action: 'exchange' });
+s = mv(s, { type: 'pass', by: 1 }); s = mv(s, { type: 'pass', by: 2 });
+const o2 = s.exch.options;
+s = mv(s, { type: 'exchange', by: 0, keep: [0, 1] });
+assert(s.deck[0] === o2[2] || s.deck[0] === o2[3], 'dikembalikan ke dasar dek');
+assert(s.deck.length === 9, 'jumlah dek');
+
 console.log('OK: semua tes aturan lulus');

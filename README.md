@@ -1,45 +1,54 @@
 # COUP · Pixel Court
 
-Game bluffing **Coup** multiplayer bergaya pixel. React + Vite + Framer Motion. Multiplayer **peer-to-peer (WebRTC via PeerJS)**, jadi
-tidak butuh server game — cukup static hosting seperti Vercel.
+Game bluffing **Coup** multiplayer bergaya pixel. React + Vite + Framer Motion, efek suara chiptune (WebAudio),
+bahasa **English (default) / Bahasa Indonesia** (⚙ Settings).
+
+## Arsitektur: Game Master di server (anti-curang)
+State asli permainan **tidak pernah ada di browser pemain mana pun**. Yang memegang kartu, dek, dan memvalidasi gerakan adalah
+**Game Master** — sebuah Vercel Function (`api/game.js`) yang menjalankan engine yang sama (`src/game/engine.js`), dengan state
+di Redis. Browser hanya mengirim gerakan dan menerima *view* miliknya sendiri (kartu lawan yang tertutup & isi dek tidak pernah
+dikirim). Karena itu membuka DevTools / membaca state di React tidak membocorkan kartu lawan.
+
+- Game Master juga yang menggerakkan **bot** dan mengambil alih pemain yang tidak aktif 12 detik (kursi direbut kembali otomatis saat
+  kembali / refresh, karena identitas = token rahasia per browser).
+- Di UI, Game Master adalah avatar pixel (badut istana) dengan animasi idle/kedip/bicara; ia "membacakan" tiap aksi lewat bubble chat.
+  Log lengkap ada di ikon pesan 💬 (bisa dibuka/tutup).
+- **Latihan vs Bot** berjalan offline sepenuhnya (logika ruangan yang sama, di memori browser).
+
+## Setup & deploy ke Vercel
+1. Push folder ini ke GitHub, lalu **Import** di Vercel (framework Vite terdeteksi otomatis).
+2. Di dashboard proyek: **Storage → Create / Connect → Upstash Redis** (Marketplace, ada paket gratis) dan hubungkan ke proyek.
+   Ini otomatis menambah env var `KV_REST_API_URL` & `KV_REST_API_TOKEN` (atau `UPSTASH_REDIS_REST_URL/TOKEN` — keduanya didukung).
+3. **Redeploy**. Tanpa Redis, mode online menampilkan pesan "Server storage is not configured" (mode latihan tetap jalan).
+
+Catatan biaya: klien melakukan polling ±1×/0,8 detik per pemain. Untuk game santai paket gratis Upstash cukup; untuk banyak
+pemain sekaligus pertimbangkan paket berbayar.
 
 ## Jalankan lokal
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm test           # simulasi 3000 game + tes aturan (Node murni)
-node scripts/net-test.mjs   # tes protokol multiplayer (PeerJS palsu in-memory)
+npm run dev      # Vite juga menyajikan /api/game dengan penyimpanan memori → online bisa dites di 2 tab, tanpa Redis
+npm test         # simulasi 3000 game + tes Game Master + tes klien (Node murni)
 ```
 
-## Deploy ke Vercel
-1. Push folder ini ke GitHub (atau `npx vercel` dari folder ini).
-2. Import di Vercel → framework terdeteksi **Vite** (build `npm run build`, output `dist`). Tanpa environment variable.
-
-## Cara main online
-- Satu orang klik **BUAT RUANGAN** → dapat kode 4 huruf + tombol **SALIN LINK UNDANGAN**.
-- Teman membuka link (atau memasukkan kode) → **GABUNG**. Host menekan **MULAI** (2–6 pemain, bot boleh ditambah).
-- **Latihan vs Bot** berjalan offline sepenuhnya.
-
-### Arsitektur multiplayer
-- Host memegang state asli & memvalidasi semua gerakan (`src/game/engine.js`). Klien hanya menerima *view* miliknya:
-  kartu tertutup lawan **tidak pernah dikirim** ke browser lain (anti-curang dari sisi klien).
-- Pemain terputus: 12 detik kemudian bot mengambil alih; bila dia kembali (refresh / buka link lagi di perangkat yang sama) kursinya direbut kembali otomatis.
-- **Jika host menutup tab, permainan berakhir** (state ada di browser host).
-- Signaling memakai broker publik gratis PeerJS. Koneksi langsung memakai STUN Google; cadangan TURN publik OpenRelay
-  (gratis, bisa dibatasi). Untuk keandalan ekstra pasang TURN sendiri:
-  `VITE_TURN_URL`, `VITE_TURN_USER`, `VITE_TURN_PASS` (Vercel → Settings → Environment Variables).
-  Broker PeerJS sendiri: `VITE_PEER_HOST`, `VITE_PEER_PORT`, `VITE_PEER_PATH`, `VITE_PEER_SECURE`.
+## Pengaturan permainan (dipilih host di lobby)
+Aturan kartu yang hilang/dibuang:
+- **Klasik** – tetap terbuka di depan pemain (aturan resmi).
+- **Kembali ke dek — diumumkan** – diperlihatkan ke semua, lalu masuk **bawah dek**; kartu hasil Tukar juga ke bawah dek.
+- **Kembali ke dek — rahasia** – masuk bawah dek tanpa diumumkan.
+Kartu selalu diambil dari **atas** dek. Bahasa dipilih per pemain di ⚙ Settings.
 
 ## Aset
-- `public/cards/*.png` — pixel art kartu (60×64), punggung kartu, koin, tengkorak, mahkota. Diperbesar dengan `image-rendering: pixelated`.
-- `assets-src/*.svg` — sumber vektor. Regenerasi pixel art: `python3 scripts/make-pixel-art.py` (butuh playwright + pillow).
-- Suara: sintesis chiptune WebAudio di `src/sound.js` (tanpa file audio). Tombol 🔊/🔇 di pojok.
-- Font: Press Start 2P & VT323 (Google Fonts).
+- `public/cards/*.png` pixel art kartu (sumber vektor di `assets-src/`, regenerasi: `python3 scripts/make-pixel-art.py`).
+- `public/ui/gm.png` sprite Game Master (6 frame: idle ×2, kedip, bicara ×2, sorak) & `msg.png` ikon pesan
+  (regenerasi: `python3 scripts/make-gm.py`).
+- Suara: sintesis di `src/sound.js` (tanpa file audio). Font: Press Start 2P & VT323.
 
 ## Struktur
 ```
-src/game/    rules.js · engine.js (aturan, fungsi murni) · bot.js
-src/net/     session.js (host/klien P2P) · index.js (konfigurasi PeerJS)
-src/components/  Menu · Lobby · Game · Flashes (animasi tantangan) · Card · Rules · ui
-src/sound.js     efek suara
+api/game.js, api/_store.js   Game Master (Vercel Function) + penyimpanan Redis/memori (compare-and-set)
+src/game/                    rules · engine (aturan, murni) · bot · room (lobby+game, dipakai server & mode lokal)
+src/net/session.js           klien: polling ke Game Master
+src/i18n/                    strings.js (EN/ID) · index.js (useT, fmtLog)
+src/components/              Menu · Lobby · Game · GameMaster · Flashes · Settings · Rules · Card · ui
 ```

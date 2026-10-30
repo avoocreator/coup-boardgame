@@ -1,324 +1,196 @@
-// Sesi multiplayer P2P (host-authoritative). Host memegang state asli; klien hanya menerima "view"
-// miliknya (kartu lawan disembunyikan) dan mengirim gerakan. Tidak butuh server game sendiri.
-import { createGame, applyMove, viewFor, whoMustAct } from '../game/engine.js';
-import { botMove } from '../game/bot.js';
-import { MAX_PLAYERS, MIN_PLAYERS } from '../game/rules.js';
-
-export const PREFIX = 'coup-royale-';
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-const BOT_NAMES = ['Bot Arya', 'Bot Bima', 'Bot Citra', 'Bot Dewi', 'Bot Eka', 'Bot Fajar'];
+// Klien: bicara dengan Game Master (server) lewat HTTP polling. Klien TIDAK pernah memegang state asli.
+// Mode latihan memakai logika ruangan yang sama persis, tetapi di memori (tanpa jaringan).
+import { newRoom, dispatch } from '../game/room.js';
 
 const initial = {
-  role: null, // 'host' | 'client'
   status: 'idle', // idle | connecting | connected | reconnecting | error
-  error: null,
+  error: null, // kunci i18n
+  notice: null, // kunci i18n (toast)
   code: null,
   mode: 'menu', // menu | lobby | game
-  players: [], // [{name, bot, connected}]
+  players: [],
   you: null,
+  isHost: false,
+  settings: { discard: 'bottom' },
   view: null,
-  notice: null,
   offline: false,
 };
 
+class RemoteTransport {
+  constructor(url) { this.url = url; }
+  async request(body) {
+    const r = await fetch(this.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    return r.json();
+  }
+}
+
+class LocalTransport {
+  constructor() { this.room = null; }
+  async request(body) {
+    const now = Date.now();
+    if (body.op === 'create') {
+      this.room = newRoom('SOLO', body.name, body.token, now);
+      return dispatch(this.room, { op: 'state', token: body.token }, now).out;
+    }
+    if (!this.room) return { ok: false, error: 'err.noRoom' };
+    const r = dispatch(this.room, body, now);
+    return r.ok ? r.out : { ok: false, error: r.error };
+  }
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+export function makeToken() {
+  try {
+    const a = new Uint8Array(16);
+    crypto.getRandomValues(a);
+    return Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
+  } catch { return Array.from({ length: 4 }, () => Math.random().toString(36).slice(2, 10)).join(''); }
+}
+
 export class Session {
-  constructor({ Peer, peerOptions = {}, token, rnd = Math.random, graceMs = 12000, botDelay = [900, 900], flashDelay = 1800, tickMs = 2000 }) {
-    this.Peer = Peer;
-    this.peerOptions = peerOptions;
-    this.token = token || Math.random().toString(36).slice(2) + Date.now().toString(36);
-    this.rnd = rnd;
-    this.graceMs = graceMs;
-    this.botDelay = botDelay;
-    this.flashDelay = flashDelay;
-    this.tickMs = tickMs;
+  constructor({ token, apiUrl = '/api/game', pollMs = 800, localPollMs = 250 }) {
+    this.token = token || makeToken();
+    this.remote = new RemoteTransport(apiUrl);
+    this.tr = this.remote;
+    this.pollMs = pollMs;
+    this.localPollMs = localPollMs;
     this.listeners = new Set();
     this.snap = { ...initial };
-    this.peer = null;
-    this.conn = null;
-    this.players = [];
-    this.state = null;
-    this.timer = null;
-    this.tick = null;
-    this.closed = false;
-    this.lastFlashAt = 0;
+    this.rev = 0;
+    this.loopId = 0;
+    this.fails = 0;
   }
 
-  /* ---------- store ---------- */
   subscribe = (fn) => { this.listeners.add(fn); return () => this.listeners.delete(fn); };
   getSnapshot = () => this.snap;
   set(patch) { this.snap = { ...this.snap, ...patch }; this.listeners.forEach((f) => f()); }
+  clearNotice() { if (this.snap.notice) this.set({ notice: null }); }
 
-  /* ================= HOST ================= */
-  hostGame(name, attempt = 0) {
+  /* ---------- masuk / keluar ruangan ---------- */
+  async createRoom(name) {
     this.reset();
-    this.set({ role: 'host', status: 'connecting', mode: 'menu', error: null });
-    const code = Array.from({ length: 4 }, () => CODE_CHARS[Math.floor(this.rnd() * CODE_CHARS.length)]).join('');
-    const peer = new this.Peer(PREFIX + code, this.peerOptions);
-    this.peer = peer;
-    this.players = [{ name: name || 'Host', token: this.token, conn: null, bot: false, connected: true, since: 0 }];
-    peer.on('open', () => {
-      this.set({ code, status: 'connected', mode: 'lobby', you: 0 });
-      this.broadcast();
-      this.tick = setInterval(() => this.scheduleBots(), this.tickMs);
-    });
-    peer.on('connection', (conn) => this.onConnection(conn));
-    peer.on('error', (err) => {
-      if (err?.type === 'unavailable-id' && attempt < 6) {
-        try { peer.destroy(); } catch { /* */ }
-        return this.hostGame(name, attempt + 1);
-      }
-      this.set({ status: 'error', error: friendlyError(err) });
-    });
-    peer.on('disconnected', () => { try { peer.reconnect(); } catch { /* */ } });
+    this.set({ status: 'connecting', error: null });
+    const res = await this.safe({ op: 'create', name });
+    if (!res) return this.set({ status: 'error', error: 'err.network' });
+    if (!res.ok) return this.set({ status: 'error', error: res.error });
+    this.enter(res.snap, name);
   }
 
-  // Mode latihan: tanpa jaringan sama sekali (host lokal + bot).
-  soloGame(name) {
+  async joinGame(code, name, { silent = false } = {}) {
     this.reset();
-    this.players = [{ name: name || 'Kamu', token: this.token, conn: null, bot: false, connected: true, since: 0 }];
-    this.set({ role: 'host', status: 'connected', mode: 'lobby', you: 0, code: 'SOLO', offline: true, error: null });
-    this.tick = setInterval(() => this.scheduleBots(), this.tickMs);
-    this.addBot(); this.addBot();
+    this.set({ status: 'connecting', error: null, code: String(code).toUpperCase() });
+    const res = await this.safe({ op: 'join', code: String(code).toUpperCase(), name });
+    if (!res) return this.fail('err.network', silent);
+    if (!res.ok) return this.fail(res.error, silent);
+    this.enter(res.snap, name);
   }
 
-  onConnection(conn) {
-    conn.on('data', (msg) => this.onData(conn, msg));
-    conn.on('close', () => this.onClose(conn));
-    conn.on('error', () => this.onClose(conn));
-  }
-
-  onData(conn, msg) {
-    if (!msg || typeof msg !== 'object') return;
-    if (msg.t === 'join') {
-      const name = String(msg.name || 'Pemain').slice(0, 14);
-      let seat = this.players.findIndex((p) => p.token === msg.token);
-      if (seat >= 0) {
-        const p = this.players[seat];
-        if (p.conn && p.conn !== conn) { try { p.conn.close(); } catch { /* */ } }
-        p.conn = conn; p.connected = true; p.since = 0; p.bot = false;
-      } else if (this.state) {
-        return send(conn, { t: 'reject', reason: 'Permainan sudah berjalan.' });
-      } else if (this.players.length >= MAX_PLAYERS) {
-        return send(conn, { t: 'reject', reason: 'Ruangan penuh (maks 6 pemain).' });
-      } else {
-        this.players.push({ name: uniqueName(this.players, name), token: msg.token, conn, bot: false, connected: true, since: 0 });
-      }
-      this.broadcast();
-      this.scheduleBots();
-    } else if (msg.t === 'move') {
-      const seat = this.players.findIndex((p) => p.conn === conn);
-      if (seat < 0 || !this.state) return;
-      const r = this.applyFrom(seat, msg.move);
-      if (!r.ok) send(conn, { t: 'error', msg: r.error });
-    } else if (msg.t === 'leave') {
-      this.onClose(conn, true);
-    }
-  }
-
-  onClose(conn, left = false) {
-    const seat = this.players.findIndex((p) => p.conn === conn);
-    if (seat < 0) return;
-    const p = this.players[seat];
-    p.conn = null;
-    p.connected = false;
-    p.since = Date.now();
-    if (!this.state || left) {
-      if (!this.state) this.players.splice(seat, 1);
-      else p.bot = true; // keluar dengan sengaja saat game: digantikan bot
-    }
-    this.broadcast();
-    this.scheduleBots();
-  }
-
-  applyFrom(seat, move) {
-    if (!move || typeof move !== 'object') return { ok: false, error: 'Gerakan rusak.' };
-    return this.apply({ ...move, by: seat }); // `by` selalu ditimpa dari koneksi: tak bisa memalsukan pemain lain
-  }
-
-  apply(move) {
-    const r = applyMove(this.state, move);
-    if (r.ok) {
-      this.state = r.state;
-      if (r.state.flashes.length) this.lastFlashAt = Date.now();
-      this.broadcast();
-      this.scheduleBots();
-    }
-    return r;
-  }
-
-  publicPlayers() {
-    return this.players.map((p) => ({ name: p.name, bot: p.bot, connected: p.connected || p.bot }));
-  }
-
-  broadcast() {
-    const players = this.publicPlayers();
-    this.players.forEach((p, i) => {
-      const msg = this.state
-        ? { t: 'game', view: viewFor(this.state, i), players, you: i }
-        : { t: 'lobby', players, you: i };
-      if (i === 0) this.set({ mode: this.state ? 'game' : 'lobby', players, you: 0, view: this.state ? msg.view : null });
-      else if (p.conn) send(p.conn, msg);
-    });
-  }
-
-  // ---- aksi host ----
-  addBot() {
-    if (this.state || this.players.length >= MAX_PLAYERS) return;
-    const used = new Set(this.players.map((p) => p.name));
-    const name = BOT_NAMES.find((n) => !used.has(n)) || 'Bot ' + this.players.length;
-    this.players.push({ name, token: 'bot-' + name, conn: null, bot: true, connected: true, since: 0 });
-    this.broadcast();
-  }
-
-  removeSeat(seat) {
-    if (this.state || seat === 0 || !this.players[seat]) return;
-    const p = this.players[seat];
-    if (p.conn) { send(p.conn, { t: 'kicked' }); try { p.conn.close(); } catch { /* */ } }
-    this.players.splice(seat, 1);
-    this.broadcast();
-  }
-
-  startGame() {
-    if (this.state || this.players.length < MIN_PLAYERS) return;
-    this.state = createGame(this.players.map((p) => p.name), this.rnd);
-    this.players.forEach((p) => { if (!p.bot && !p.connected) { p.bot = true; } });
-    this.lastFlashAt = Date.now();
-    this.broadcast();
-    this.scheduleBots();
-  }
-
-  rematch() {
-    if (this.snap.role !== 'host' || !this.state) return;
-    clearTimeout(this.timer); this.timer = null;
-    this.state = null;
-    this.players = this.players.filter((p) => p.bot || p.connected);
-    this.broadcast();
-  }
-
-  isAuto(i) {
-    const p = this.players[i];
-    return !!p && (p.bot || (!p.connected && Date.now() - p.since > this.graceMs));
-  }
-
-  scheduleBots() {
-    if (this.snap.role !== 'host' || this.timer || !this.state || this.state.phase === 'over') return;
-    if (!whoMustAct(this.state).some((i) => this.isAuto(i))) return;
-    const [lo, hi] = this.botDelay;
-    const extra = Date.now() - this.lastFlashAt < this.flashDelay + 700 ? this.flashDelay : 0; // beri waktu animasi tantangan
-    this.timer = setTimeout(() => {
-      this.timer = null;
-      if (!this.state || this.closed) return;
-      const seats = whoMustAct(this.state).filter((i) => this.isAuto(i));
-      if (seats.length) {
-        const seat = seats[Math.floor(this.rnd() * seats.length)];
-        const mv = botMove(this.state, seat, this.rnd);
-        if (mv) this.apply(mv);
-      }
-      this.scheduleBots();
-    }, lo + this.rnd() * (hi - lo) + extra);
-  }
-
-  /* ================= CLIENT ================= */
-  joinGame(code, name) {
+  async soloGame(name) {
     this.reset();
-    code = String(code || '').trim().toUpperCase();
-    this.myName = name || 'Pemain';
-    this.set({ role: 'client', status: 'connecting', code, error: null, mode: 'menu' });
-    this.attempts = 0;
-    this.connectToHost();
+    this.tr = new LocalTransport();
+    this.set({ status: 'connecting', offline: true });
+    const res = await this.tr.request({ op: 'create', name, token: this.token });
+    this.enter(res.snap, name, true);
+    await this.call({ op: 'addBot' });
+    await this.call({ op: 'addBot' });
   }
 
-  connectToHost() {
-    if (this.closed) return;
-    try { this.peer?.destroy(); } catch { /* */ }
-    const peer = new this.Peer(undefined, this.peerOptions);
-    this.peer = peer;
-    let opened = false;
-    const fail = (msg) => {
-      if (this.closed || this.peer !== peer) return;
-      if (this.snap.mode !== 'menu' && this.attempts < 40) return this.retry();
-      this.set({ status: 'error', error: msg });
-    };
-    const timeout = setTimeout(() => { if (!opened) fail('Tidak bisa terhubung ke ruangan. Cek kode atau koneksi internetmu.'); }, 15000);
-    peer.on('open', () => {
-      const conn = peer.connect(PREFIX + this.snap.code, { reliable: true, serialization: 'json' });
-      this.conn = conn;
-      conn.on('open', () => {
-        opened = true; clearTimeout(timeout);
-        this.attempts = 0;
-        this.set({ status: 'connected', error: null });
-        send(conn, { t: 'join', name: this.myName, token: this.token });
-      });
-      conn.on('data', (msg) => this.onHostMessage(msg));
-      conn.on('close', () => { clearTimeout(timeout); if (this.conn === conn) fail('Koneksi ke host terputus.'); });
-      conn.on('error', () => { clearTimeout(timeout); if (this.conn === conn) fail('Koneksi ke host bermasalah.'); });
-    });
-    peer.on('error', (err) => {
-      clearTimeout(timeout);
-      if (err?.type === 'peer-unavailable') return this.set({ status: 'error', error: 'Ruangan tidak ditemukan. Cek kodenya.' });
-      fail(friendlyError(err));
-    });
+  enter(snap, name, offline = false) {
+    this.rev = 0;
+    this.apply(snap);
+    this.set({ status: 'connected', error: null, offline });
+    if (!offline) { try { sessionStorage.setItem('coup.resume', JSON.stringify({ code: snap.code, name })); } catch { /* */ } }
+    this.startLoop(offline ? this.localPollMs : this.pollMs);
   }
 
-  retry() {
-    this.attempts++;
-    this.set({ status: 'reconnecting' });
-    setTimeout(() => this.connectToHost(), 2000);
+  // dipanggil saat halaman dibuka lagi (refresh): rebut kursi lama dengan token yang sama
+  async resume() {
+    let r = null;
+    try { r = JSON.parse(sessionStorage.getItem('coup.resume') || 'null'); } catch { /* */ }
+    if (r?.code) await this.joinGame(r.code, r.name || 'Player', { silent: true });
   }
 
-  onHostMessage(msg) {
-    if (!msg) return;
-    if (msg.t === 'lobby') this.set({ mode: 'lobby', players: msg.players, you: msg.you, view: null, status: 'connected' });
-    else if (msg.t === 'game') this.set({ mode: 'game', players: msg.players, you: msg.you, view: msg.view, status: 'connected' });
-    else if (msg.t === 'reject') { this.closed = true; this.set({ status: 'error', error: msg.reason, mode: 'menu' }); }
-    else if (msg.t === 'kicked') { this.closed = true; this.set({ ...initial, notice: 'Kamu dikeluarkan dari ruangan.' }); }
-    else if (msg.t === 'error') this.set({ notice: msg.msg });
+  fail(error, silent) {
+    if (silent) { try { sessionStorage.removeItem('coup.resume'); } catch { /* */ } return this.set({ ...initial }); }
+    return this.set({ status: 'error', error });
   }
 
-  /* ================= umum ================= */
-  move(move) {
-    if (this.snap.role === 'host') {
-      if (!this.state) return;
-      const r = this.applyFrom(0, move);
-      if (!r.ok) this.set({ notice: r.error });
-    } else if (this.conn?.open) send(this.conn, { t: 'move', move });
-  }
-
-  reset() {
-    this.closed = false;
-    clearTimeout(this.timer); this.timer = null;
-    clearInterval(this.tick); this.tick = null;
-    try { this.conn?.close(); } catch { /* */ }
-    try { this.peer?.destroy(); } catch { /* */ }
-    this.peer = this.conn = null;
-    this.players = []; this.state = null;
-  }
-
-  leave() {
-    if (this.snap.role === 'client' && this.conn?.open) send(this.conn, { t: 'leave' });
-    if (this.snap.role === 'host') this.players.forEach((p, i) => { if (i && p.conn) send(p.conn, { t: 'kicked' }); });
+  async leave() {
+    if (this.snap.mode !== 'menu') { try { await this.tr.request({ op: 'leave', code: this.snap.code, token: this.token }); } catch { /* */ } }
     this.reset();
-    this.closed = true;
     this.set({ ...initial });
   }
 
-  clearNotice() { if (this.snap.notice) this.set({ notice: null }); }
+  reset() {
+    this.loopId++;
+    this.tr = this.remote;
+    this.rev = 0;
+    this.fails = 0;
+    try { sessionStorage.removeItem('coup.resume'); } catch { /* */ }
+  }
+
+  /* ---------- permintaan ---------- */
+  async safe(body) {
+    try {
+      const res = await this.tr.request({ ...body, token: this.token });
+      this.fails = 0;
+      return res;
+    } catch { return null; }
+  }
+
+  apply(snap) {
+    if (!snap || snap.rev < this.rev) return;
+    this.rev = snap.rev;
+    this.set({ code: snap.code, mode: snap.mode, you: snap.you, isHost: snap.isHost, players: snap.players, settings: snap.settings, view: snap.view });
+  }
+
+  async call(body) {
+    const id = this.loopId;
+    const res = await this.safe({ ...body, code: this.snap.code, rev: body.op === 'state' ? this.rev : undefined });
+    if (id !== this.loopId) return null; // sesi sudah berganti
+    if (!res) {
+      this.fails++;
+      if (this.snap.mode !== 'menu') this.set({ status: this.fails >= 20 ? 'error' : 'reconnecting', error: this.fails >= 20 ? 'err.lost' : null });
+      return null;
+    }
+    if (this.snap.status === 'reconnecting') this.set({ status: 'connected' });
+    if (!res.ok) {
+      if (res.error === 'err.noRoom' || res.error === 'err.notInRoom') { this.reset(); this.set({ ...initial, error: res.error, status: 'error' }); }
+      else if (res.error !== 'err.busy' || body.op !== 'state') this.set({ notice: res.error });
+      return res;
+    }
+    if (res.left) { this.reset(); this.set({ ...initial }); return res; }
+    if (res.snap) this.apply(res.snap);
+    return res;
+  }
+
+  startLoop(ms) {
+    const id = ++this.loopId;
+    (async () => {
+      while (id === this.loopId) {
+        await sleep(ms);
+        if (id !== this.loopId) break;
+        await this.call({ op: 'state' });
+      }
+    })();
+  }
+
+  /* ---------- aksi ---------- */
+  addBot() { return this.call({ op: 'addBot' }); }
+  removeSeat(seat) { return this.call({ op: 'kick', seat }); }
+  setSettings(patch) { return this.call({ op: 'settings', patch }); }
+  startGame() { return this.call({ op: 'start' }); }
+  rematch() { return this.call({ op: 'rematch' }); }
+  move(move) { return this.call({ op: 'move', move }); }
 }
 
-function send(conn, msg) {
-  try { if (conn && conn.open !== false) conn.send(msg); } catch { /* koneksi mati */ }
+function getToken() {
+  try {
+    let t = localStorage.getItem('coup.token2');
+    if (!t) { t = makeToken(); localStorage.setItem('coup.token2', t); }
+    return t;
+  } catch { return makeToken(); }
 }
 
-function uniqueName(players, name) {
-  let n = name, i = 2;
-  while (players.some((p) => p.name === n)) n = `${name} ${i++}`;
-  return n;
-}
-
-function friendlyError(err) {
-  const t = err?.type || '';
-  if (t === 'network' || t === 'server-error' || t === 'socket-error' || t === 'socket-closed')
-    return 'Tidak bisa menghubungi server perantara PeerJS. Cek koneksi internet lalu coba lagi.';
-  if (t === 'browser-incompatible') return 'Browser ini tidak mendukung WebRTC.';
-  return 'Terjadi kesalahan jaringan' + (t ? ` (${t})` : '') + '.';
-}
+export const session = new Session({ token: getToken() });

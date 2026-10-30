@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Card, { stepped } from './Card.jsx';
+import GameMaster from './GameMaster.jsx';
 import { Btn } from './ui.jsx';
+import { useT } from '../i18n/index.js';
 
-export default function Menu({ session, snap, initialCode, onRules }) {
+export default function Menu({ session, snap, initialCode, onRules, onSettings }) {
+  const t = useT();
   const [name, setName] = useState(() => { try { return localStorage.getItem('coup.name') || ''; } catch { return ''; } });
   const [code, setCode] = useState(initialCode || '');
   const busy = snap.status === 'connecting';
   const nm = () => {
-    const n = (name.trim() || 'Pemain').slice(0, 14);
+    const n = (name.trim() || t('menu.namePh')).slice(0, 14);
     try { localStorage.setItem('coup.name', n); } catch { /* */ }
     return n;
-  };
-  const host = () => session.hostGame(nm());
-  const join = () => {
-    const n = nm();
-    try { sessionStorage.setItem('coup.resume', JSON.stringify({ code: code.trim().toUpperCase(), name: n })); } catch { /* */ }
-    session.joinGame(code, n);
   };
 
   return (
@@ -31,26 +28,30 @@ export default function Menu({ session, snap, initialCode, onRules }) {
       <motion.h1 className="logo" initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6, ease: stepped(8) }}>
         COUP
       </motion.h1>
-      <p className="tag">Bohongi, tantang, dan rebut tahta.</p>
+      <p className="tag">{t('menu.tag')}</p>
 
       <div className="panel px menu-box">
-        <label>NAMAMU</label>
-        <input className="field" value={name} maxLength={14} placeholder="Pemain" onChange={(e) => setName(e.target.value)} />
+        <label>{t('menu.name')}</label>
+        <input className="field" value={name} maxLength={14} placeholder={t('menu.namePh')} onChange={(e) => setName(e.target.value)} />
         <div className="row">
-          <Btn kind="gold" disabled={busy} onClick={host}>BUAT RUANGAN</Btn>
+          <Btn kind="gold" disabled={busy} onClick={() => session.createRoom(nm())}>{t('menu.create')}</Btn>
         </div>
-        <div className="or">— atau gabung —</div>
+        <div className="or">{t('menu.orJoin')}</div>
         <div className="row">
-          <input className="field code" value={code} maxLength={4} placeholder="KODE" onChange={(e) => setCode(e.target.value.toUpperCase())} />
-          <Btn kind="green" disabled={busy || code.trim().length < 4} onClick={join}>GABUNG</Btn>
+          <input className="field code" value={code} maxLength={4} placeholder={t('menu.code')} onChange={(e) => setCode(e.target.value.toUpperCase())} />
+          <Btn kind="green" disabled={busy || code.trim().length < 4} onClick={() => session.joinGame(code, nm())}>{t('menu.join')}</Btn>
         </div>
-        <div className="or">— atau —</div>
-        <Btn onClick={() => session.soloGame(nm())}>LATIHAN VS BOT (OFFLINE)</Btn>
-        {busy && <div className="status blink">Menghubungkan…</div>}
-        {snap.status === 'error' && <div className="status err">{snap.error}</div>}
-        {snap.notice && <div className="status err">{snap.notice}</div>}
+        <div className="or">{t('menu.or')}</div>
+        <Btn disabled={busy} onClick={() => session.soloGame(nm())}>{t('menu.solo')}</Btn>
+        {busy && <div className="status blink">{t('menu.connecting')}</div>}
+        {snap.status === 'error' && snap.error && <div className="status err">{t(snap.error)}</div>}
+        {snap.notice && <div className="status err">{t(snap.notice)}</div>}
       </div>
-      <Btn kind="small" onClick={onRules}>? ATURAN</Btn>
+      <GameMaster text={t('gm.menu')} size={3} />
+      <div className="row">
+        <Btn kind="small" onClick={onRules}>{t('menu.rules')}</Btn>
+        <Btn kind="small" onClick={onSettings}>⚙ {t('menu.settings')}</Btn>
+      </div>
     </div>
   );
 }
