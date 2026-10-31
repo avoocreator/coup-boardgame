@@ -44,7 +44,7 @@ export default function GameMaster({ text, kind = 'info', mood = 'idle', size = 
   );
 }
 
-// Menyalurkan entri log baru dari server menjadi "ucapan" Game Master, satu per satu.
+// dialog Game Master dari log server
 export function useNarration(view) {
   const t = useT();
   const last = view.log[view.log.length - 1];
@@ -69,7 +69,7 @@ export function useNarration(view) {
     const added = view.log.length - p.len;
     const entries = added > 0 ? view.log.slice(-added) : view.log.slice(-2);
     prev.current = { seq: view.seq, len: view.log.length };
-    if (view.seq < p.seq) queue.current = []; // game baru
+    if (view.seq < p.seq) queue.current = [];
     queue.current.push(...entries.map((e) => ({ text: fmtLog(e, tRef.current), kind: e.k })));
     if (queue.current.length > 4) queue.current = queue.current.slice(-4);
     play();

@@ -19,7 +19,6 @@ export function Btn({ children, onClick, disabled, kind = '', className = '', ..
 
 export const CoinIcon = ({ size = 20 }) => <img className="pix" src={asset('coin')} width={size} height={size} alt="koin" draggable={false} />;
 
-// Angka koin dengan efek "pop" dan indikator +/- yang melayang.
 export function Coins({ n }) {
   const prev = useRef(n);
   const [delta, setDelta] = useState(null);

@@ -1,4 +1,3 @@
-// Bot sederhana — juga dipakai untuk menggantikan pemain yang terputus.
 import { ACTIONS } from './rules.js';
 import { pendingResponders, knownCopies } from './engine.js';
 

@@ -264,7 +264,7 @@ export default function Game({ session, snap, onSettings }) {
 
   useEffect(() => { setPicking(null); }, [v.seq]);
 
-  // efek suara berdasarkan perubahan state
+  // trigger sfx tiap update state
   useEffect(() => {
     const p = prev.current;
     const total = v.players.reduce((a, x) => a + x.coins, 0);

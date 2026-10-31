@@ -5,17 +5,12 @@ import { Btn } from './ui.jsx';
 import { charName, useT } from '../i18n/index.js';
 import { sfx } from '../sound.js';
 
-/**
- * Antrian overlay besar: tantangan (kartu dibuka) & kehilangan pengaruh.
- * Sepenuhnya MANUAL: tidak ada timer otomatis — pemain menekan tombol untuk membuka kartu dan lanjut,
- * jadi bisa membaca dulu. (Hanya tampil di pemain manusia; bot tidak punya UI.)
- * `onBusy(true/false)` memberi tahu parent selama masih ada overlay yang belum ditutup.
- */
+// overlay kartu (tantangan & eliminasi)
 export default function Flashes({ view, onBusy }) {
   const t = useT();
   const names = view.players.map((p) => p.name);
   const [queue, setQueue] = useState([]);
-  const [step, setStep] = useState(0); // 0 = kartu tertutup, 1 = terbuka
+  const [step, setStep] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const lastSeq = useRef(view.seq);
 
@@ -28,7 +23,6 @@ export default function Flashes({ view, onBusy }) {
   const cur = queue[0];
   useEffect(() => { onBusy?.(!!cur); }, [cur, onBusy]);
 
-  // setiap overlay baru: reset; kehilangan pengaruh langsung memperlihatkan kartunya (tanpa menunggu)
   useEffect(() => {
     if (!cur) return undefined;
     setStep(0);
@@ -45,7 +39,7 @@ export default function Flashes({ view, onBusy }) {
     setTimeout(() => (cur.truthful ? sfx.truth() : sfx.lie()), 500);
   };
   const next = () => {
-    if (cur.kind === 'lose' && cur.toDeck && !leaving) { // kartu melayang ke dek dulu, baru ditutup
+    if (cur.kind === 'lose' && cur.toDeck && !leaving) {
       setLeaving(true);
       setTimeout(() => setQueue((q) => q.slice(1)), 450);
       return;

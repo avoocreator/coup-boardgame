@@ -1,7 +1,4 @@
-// Penyimpanan ruangan. Produksi: Redis lewat REST (Upstash / Vercel Marketplace). Lokal: memori.
-// Setiap ruangan = hash { ver, data }; penulisan memakai compare-and-set (Lua) supaya dua request
-// yang bersamaan tidak saling menimpa.
-const TTL = 6 * 60 * 60; // detik
+const TTL = 6 * 60 * 60;
 
 const CAS = `
 local v = redis.call('HGET', KEYS[1], 'ver')
@@ -58,6 +55,6 @@ export function getStore() {
   const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
   const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
   if (url && token) return redisStore(url, token);
-  if (env.VERCEL) return null; // produksi tanpa Redis: memori tidak dibagi antar instance → tolak dengan jelas
+  if (env.VERCEL) return null;
   return memoryStore();
 }

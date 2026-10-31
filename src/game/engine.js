@@ -1,5 +1,3 @@
-// Engine Coup — fungsi murni. Dijalankan oleh "Game Master" (server / ruangan lokal); pemain tidak pernah
-// memegang state asli. Log & error memakai kunci terstruktur supaya bisa diterjemahkan di UI.
 import { CHARS, ACTIONS, normalizeSettings } from './rules.js';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -12,7 +10,7 @@ export function shuffle(arr, rnd = Math.random) {
   return arr;
 }
 
-// Dek: akhir array = ATAS dek (diambil dengan pop), indeks 0 = BAWAH dek (unshift).
+// dek: akhir array = atas, indeks 0 = bawah
 export function createGame(names, rnd = Math.random, settings) {
   const deck = [];
   for (const c of CHARS) for (let i = 0; i < 3; i++) deck.push(c);
@@ -27,14 +25,14 @@ export function createGame(names, rnd = Math.random, settings) {
     ],
   }));
   const first = Math.floor(rnd() * players.length);
-  if (players.length === 2) players[first].coins = 1; // aturan resmi 2 pemain
+  if (players.length === 2) players[first].coins = 1;
   const s = {
     seq: 0,
     settings: normalizeSettings(settings),
     players,
     deck,
     turn: first,
-    phase: 'action', // action | challenge | block | blockChallenge | lose | exchange | over
+    phase: 'action',
     act: null,
     block: null,
     passed: [],
@@ -101,7 +99,7 @@ function revealCard(s, p, idx) {
   const card = pl.cards[idx];
   const secret = s.settings.discard === 'bottomSecret';
   if (classic(s)) card.revealed = true;
-  else { pl.cards.splice(idx, 1); s.deck.unshift(card.char); } // masuk ke BAWAH dek
+  else { pl.cards.splice(idx, 1); s.deck.unshift(card.char); }
   s.flashes.push({ kind: 'lose', player: p, char: card.char, secret, toDeck: !classic(s) });
   if (secret) say(s, 'loss', 'loseSecret', { name: pl.name });
   else say(s, 'loss', 'lose', { name: pl.name, char: card.char });
@@ -166,8 +164,8 @@ function resolveChallenge(s, challenger, challenged, char, onChallengerLoses, on
   say(s, 'challenge', 'challenge', { a: nm(s, challenger), b: nm(s, challenged) });
   if (truthful) {
     say(s, 'challenge', 'truth', { name: nm(s, challenged), char });
-    if (classic(s)) { s.deck.push(char); shuffle(s.deck); } else s.deck.unshift(char); // kartu bukti → bawah dek
-    p.cards[idx].char = s.deck.pop(); // ambil kartu baru dari ATAS dek
+    if (classic(s)) { s.deck.push(char); shuffle(s.deck); } else s.deck.unshift(char);
+    p.cards[idx].char = s.deck.pop();
     startLose(s, challenger, onChallengerLoses);
   } else {
     say(s, 'challenge', 'lie', { name: nm(s, challenged), char });
@@ -210,7 +208,7 @@ function resolveAction(s) {
     }
     case 'exchange': {
       const own = hidden(s, a.actor).map((c) => c.char);
-      const drawn = [s.deck.pop(), s.deck.pop()]; // dari ATAS dek
+      const drawn = [s.deck.pop(), s.deck.pop()];
       s.phase = 'exchange';
       s.exch = { options: [...own, ...drawn], keep: own.length };
       say(s, 'info', 'exchange', { name: actor.name });
@@ -301,7 +299,7 @@ export function applyMove(state, m) {
       const back = options.filter((_, i) => !keep.includes(i));
       const slots = s.players[by].cards.filter((c) => !c.revealed);
       slots.forEach((c, i) => { c.char = kept[i]; });
-      if (classic(s)) { s.deck.push(...back); shuffle(s.deck); } else s.deck.unshift(...back); // → BAWAH dek
+      if (classic(s)) { s.deck.push(...back); shuffle(s.deck); } else s.deck.unshift(...back);
       s.exch = null;
       say(s, 'info', 'exchangeDone', { name: nm(s, by) });
       endTurn(s);
@@ -314,7 +312,7 @@ export function applyMove(state, m) {
   return { ok: true, state: s };
 }
 
-// Tampilan untuk satu pemain: kartu lawan yang belum terbuka & isi dek TIDAK ikut dikirim.
+// filter view per pemain (kartu tertutup & dek disembunyikan)
 export function viewFor(s, seat) {
   const v = clone(s);
   v.deckCount = v.deck.length;
@@ -339,7 +337,6 @@ export function whoMustAct(s) {
 }
 
 export function knownCopies(s, seat, char) {
-  // kopi karakter yang pasti diketahui `seat`: kartu terbuka + kartu di tangannya
   let n = 0;
   s.players.forEach((p, i) => p.cards.forEach((c) => {
     if (c.char === char && (c.revealed || i === seat)) n++;
