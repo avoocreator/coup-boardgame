@@ -17,7 +17,7 @@ export default function App() {
   useEffect(() => {
     const unlock = () => unlockAudio();
     window.addEventListener('pointerdown', unlock, { once: true });
-    session.resume();
+    session.resume(); // refresh tab → kursi yang sama direbut kembali otomatis
     return () => window.removeEventListener('pointerdown', unlock);
   }, []);
 

@@ -1,3 +1,5 @@
+// Konstanta aturan Coup (struktur saja). Teks tampilan ada di src/i18n/strings.js.
+
 export const CHARS = ['duke', 'assassin', 'captain', 'ambassador', 'contessa'];
 
 export const CHAR_INFO = {
@@ -8,6 +10,8 @@ export const CHAR_INFO = {
   contessa: { name: 'Contessa', color: '#d1456b' },
 };
 
+// claim: karakter yang diklaim (bisa ditantang). blockedBy: karakter yang bisa memblokir.
+// blockAny: semua pemain boleh memblokir (bukan hanya target).
 export const ACTIONS = {
   income: { id: 'income', cost: 0, claim: null, target: false, blockedBy: [] },
   foreignAid: { id: 'foreignAid', cost: 0, claim: null, target: false, blockedBy: ['duke'], blockAny: true },
@@ -24,7 +28,10 @@ export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const COUP_MANDATORY = 10;
 
-// variasi aturan kartu buangan
+// Aturan kartu yang hilang/dibuang:
+//  classic      – tetap terbuka di depan pemain (aturan resmi)
+//  bottom       – diumumkan ke semua, lalu masuk ke BAWAH dek
+//  bottomSecret – masuk ke bawah dek tanpa diumumkan
 export const DISCARD_MODES = ['classic', 'bottom', 'bottomSecret'];
 export const DEFAULT_SETTINGS = { discard: 'bottom' };
 export function normalizeSettings(s) {

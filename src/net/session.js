@@ -1,11 +1,13 @@
+// Klien: bicara dengan Game Master (server) lewat HTTP polling. Klien TIDAK pernah memegang state asli.
+// Mode latihan memakai logika ruangan yang sama persis, tetapi di memori (tanpa jaringan).
 import { newRoom, dispatch } from '../game/room.js';
 
 const initial = {
-  status: 'idle',
-  error: null,
-  notice: null,
+  status: 'idle', // idle | connecting | connected | reconnecting | error
+  error: null, // kunci i18n
+  notice: null, // kunci i18n (toast)
   code: null,
-  mode: 'menu',
+  mode: 'menu', // menu | lobby | game
   players: [],
   you: null,
   isHost: false,
@@ -65,7 +67,7 @@ export class Session {
   set(patch) { this.snap = { ...this.snap, ...patch }; this.listeners.forEach((f) => f()); }
   clearNotice() { if (this.snap.notice) this.set({ notice: null }); }
 
-  // room flow
+  /* ---------- masuk / keluar ruangan ---------- */
   async createRoom(name) {
     this.reset();
     this.set({ status: 'connecting', error: null });
@@ -102,7 +104,7 @@ export class Session {
     this.startLoop(offline ? this.localPollMs : this.pollMs);
   }
 
-  // reconnect kursi lama
+  // dipanggil saat halaman dibuka lagi (refresh): rebut kursi lama dengan token yang sama
   async resume() {
     let r = null;
     try { r = JSON.parse(sessionStorage.getItem('coup.resume') || 'null'); } catch { /* */ }
@@ -128,7 +130,7 @@ export class Session {
     try { sessionStorage.removeItem('coup.resume'); } catch { /* */ }
   }
 
-  // request helper
+  /* ---------- permintaan ---------- */
   async safe(body) {
     try {
       const res = await this.tr.request({ ...body, token: this.token });
@@ -146,7 +148,7 @@ export class Session {
   async call(body) {
     const id = this.loopId;
     const res = await this.safe({ ...body, code: this.snap.code, rev: body.op === 'state' ? this.rev : undefined });
-    if (id !== this.loopId) return null;
+    if (id !== this.loopId) return null; // sesi sudah berganti
     if (!res) {
       this.fails++;
       if (this.snap.mode !== 'menu') this.set({ status: this.fails >= 20 ? 'error' : 'reconnecting', error: this.fails >= 20 ? 'err.lost' : null });
@@ -174,7 +176,7 @@ export class Session {
     })();
   }
 
-  // aksi room & game
+  /* ---------- aksi ---------- */
   addBot() { return this.call({ op: 'addBot' }); }
   removeSeat(seat) { return this.call({ op: 'kick', seat }); }
   setSettings(patch) { return this.call({ op: 'settings', patch }); }

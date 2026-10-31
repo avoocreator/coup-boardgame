@@ -1,3 +1,4 @@
+// Game Master (server): satu endpoint untuk semua operasi ruangan. Hanya sini yang memegang state asli.
 import { newRoom, dispatch, snapshot, randomCode } from '../src/game/room.js';
 import { getStore } from './_store.js';
 
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
       if (!r.ok) return send(res, 200, { ok: false, error: r.error });
       if (r.persist) {
         const ok = await store.cas(code, cur.ver, room);
-        if (!ok) continue;
+        if (!ok) continue; // bentrok dengan request lain: muat ulang & coba lagi
       }
       return send(res, 200, r.out);
     }

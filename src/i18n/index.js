@@ -26,6 +26,7 @@ export function translate(l, key, vars) {
   return s;
 }
 
+// const t = useT();  t('menu.create')  t('log.turn', {name})
 export function useT() {
   const l = useSyncExternalStore(subscribe, getLang);
   return useMemo(() => {
@@ -37,6 +38,7 @@ export function useT() {
 
 export const charName = (c) => CHAR_INFO[c]?.name ?? '';
 
+// Ubah satu entri log terstruktur dari engine menjadi kalimat.
 export function fmtLog(entry, t) {
   const a = { ...entry.a };
   if (a.char) a.char = charName(a.char);

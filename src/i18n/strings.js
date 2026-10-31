@@ -1,3 +1,4 @@
+// Semua teks tampilan. Default: English. Tambah bahasa baru = tambah satu objek di sini.
 export const LANGS = { en: 'English', id: 'Bahasa Indonesia' };
 
 export const STR = {
@@ -31,7 +32,9 @@ export const STR = {
     'ctl.blockAs': 'BLOCK: {char}', 'ctl.pass': 'PASS', 'ctl.loseWho': '{name} is choosing a card to lose…',
     'ctl.loseMe': 'Choose a card to lose ↓ (click one of your cards)', 'ctl.exchWho': '{name} is swapping cards…',
     'ctl.exchPick': 'Keep {n} card(s) ({sel}/{n})', 'ctl.keep': 'KEEP', 'ctl.coinsN': '{n} coins', 'ctl.imChar': "I'm {char}",
+    'flash.reveal': 'REVEAL CARD', 'flash.next': 'NEXT', 'flash.ok': 'OK', 'flash.hint': 'Take your time — press the button when you are ready.',
     'flash.challenges': '⚔ {a} CHALLENGES {b}!', 'flash.claimed': '{name} claimed to have {char}…',
+    'flash.next': 'NEXT ▶', 'flash.more': '+{n} more', 'flash.hint': 'Click or press Enter to continue',
     'flash.truth': 'TRUTH! {name} loses a card', 'flash.lie': 'BLUFF! {name} loses a card',
     'flash.loses': '{name} LOSES AN INFLUENCE', 'flash.out': '{char} is revealed and out of the game',
     'flash.toDeck': '{char} goes to the bottom of the deck', 'flash.secret': 'A card goes to the bottom of the deck — nobody sees which',
@@ -105,7 +108,9 @@ export const STR = {
     'ctl.blockAs': 'BLOK: {char}', 'ctl.pass': 'LEWATI', 'ctl.loseWho': '{name} memilih kartu yang dibuang…',
     'ctl.loseMe': 'Pilih kartu yang harus kamu buang ↓ (klik salah satu kartumu)', 'ctl.exchWho': '{name} menukar kartu…',
     'ctl.exchPick': 'Simpan {n} kartu ({sel}/{n})', 'ctl.keep': 'SIMPAN', 'ctl.coinsN': '{n} koin', 'ctl.imChar': 'aku {char}',
+    'flash.reveal': 'BUKA KARTU', 'flash.next': 'LANJUT', 'flash.ok': 'OK', 'flash.hint': 'Santai saja — tekan tombol kalau sudah siap.',
     'flash.challenges': '⚔ {a} MENANTANG {b}!', 'flash.claimed': '{name} mengaku punya {char}…',
+    'flash.next': 'LANJUT ▶', 'flash.more': '+{n} lagi', 'flash.hint': 'Klik atau tekan Enter untuk lanjut',
     'flash.truth': 'JUJUR! {name} kehilangan kartu', 'flash.lie': 'BOHONG! {name} kehilangan kartu',
     'flash.loses': '{name} KEHILANGAN PENGARUH', 'flash.out': '{char} terbuka dan keluar dari permainan',
     'flash.toDeck': '{char} masuk ke bawah dek', 'flash.secret': 'Sebuah kartu masuk ke bawah dek — tak ada yang tahu apa',

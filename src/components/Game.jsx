@@ -259,11 +259,12 @@ export default function Game({ session, snap, onSettings }) {
   const [picking, setPicking] = useState(null);
   const [rules, setRules] = useState(false);
   const [muted, setM] = useState(isMuted());
+  const [flashBusy, setFlashBusy] = useState(false);
   const prev = useRef({ seq: -1, coins: -1, logLen: 0, turnMine: false });
 
   useEffect(() => { setPicking(null); }, [v.seq]);
 
-  // trigger sfx tiap update state
+  // efek suara berdasarkan perubahan state
   useEffect(() => {
     const p = prev.current;
     const total = v.players.reduce((a, x) => a + x.coins, 0);
@@ -328,8 +329,8 @@ export default function Game({ session, snap, onSettings }) {
       </div>
 
       <AnimatePresence>{snap.notice && <motion.div className="toast px" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }}>{t(snap.notice)}</motion.div>}</AnimatePresence>
-      <Flashes view={v} />
-      {v.phase === 'over' && <GameOver v={v} snap={snap} session={session} />}
+      <Flashes view={v} onBusy={setFlashBusy} />
+      {v.phase === 'over' && !flashBusy && <GameOver v={v} snap={snap} session={session} />}
       <AnimatePresence>{rules && <Rules onClose={() => setRules(false)} />}</AnimatePresence>
     </div>
   );

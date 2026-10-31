@@ -1,9 +1,11 @@
+// Logika ruangan (lobby + game) yang dijalankan "Game Master": di Vercel Function (online) atau di memori (latihan offline).
+// Pemain TIDAK PERNAH memegang state asli — mereka hanya menerima snapshot() miliknya sendiri.
 import { createGame, applyMove, viewFor, whoMustAct } from './engine.js';
 import { botMove } from './bot.js';
 import { MAX_PLAYERS, MIN_PLAYERS, normalizeSettings } from './rules.js';
 
-export const GRACE_MS = 12000; // batas AFK (12 detik)
-const TOUCH_MS = 5000;
+export const GRACE_MS = 12000; // pemain tak aktif selama ini → bot mengambil alih
+const TOUCH_MS = 5000; // seberapa sering "terakhir terlihat" disimpan
 const BOT_NAMES = ['Bot Arya', 'Bot Bima', 'Bot Citra', 'Bot Dewi', 'Bot Eka', 'Bot Fajar'];
 export const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
@@ -32,7 +34,7 @@ const hostSeat = (room) => room.players.findIndex((p) => !p.bot);
 const isAuto = (room, i, now) => { const p = room.players[i]; return !!p && (p.bot || now - p.lastSeen > GRACE_MS); };
 const connected = (p, now) => p.bot || now - p.lastSeen < GRACE_MS;
 
-// snapshot per pemain
+/* ---------- snapshot untuk satu pemain ---------- */
 export function snapshot(room, token, now) {
   const seat = seatOf(room, token);
   if (seat < 0) return null;
@@ -48,7 +50,8 @@ export function snapshot(room, token, now) {
   };
 }
 
-// handler aksi ruangan
+/* ---------- operasi ---------- */
+// Mengembalikan { ok, error?, persist } — persist: perlu disimpan ke penyimpanan.
 function handle(room, body, now) {
   const op = body.op;
   const seat = seatOf(room, body.token);
@@ -74,7 +77,7 @@ function handle(room, body, now) {
     case 'move': {
       if (!room.state) return { ok: false, error: 'err.noGame' };
       if (!body.move || typeof body.move !== 'object') return { ok: false, error: 'err.unknownMove' };
-      const r = applyMove(room.state, { ...body.move, by: seat });
+      const r = applyMove(room.state, { ...body.move, by: seat }); // `by` selalu dari token: tak bisa memalsukan pemain lain
       if (!r.ok) return { ok: false, error: r.error };
       room.state = r.state;
       if (r.state.flashes.length) room.flashAt = now;
@@ -124,7 +127,7 @@ function handle(room, body, now) {
       return { ok: true, persist: true };
     }
     case 'leave': {
-      if (room.state) { me.bot = true; me.token = null; }
+      if (room.state) { me.bot = true; me.token = null; } // saat game: digantikan bot
       else room.players.splice(seat, 1);
       if (!room.players.some((p) => !p.bot)) room.closed = true;
       room.rev++;
@@ -134,14 +137,14 @@ function handle(room, body, now) {
   }
 }
 
-// bot & takeover pemain AFK
+/* ---------- bot / pemain terputus digerakkan secara "malas" (tiap ada request) ---------- */
 export function tick(room, now, rnd = Math.random) {
   const s = room.state;
   if (!s || s.phase === 'over') { if (room.botAt !== null) { room.botAt = null; return true; } return false; }
   const seats = whoMustAct(s).filter((i) => isAuto(room, i, now));
   if (!seats.length) { if (room.botAt !== null) { room.botAt = null; return true; } return false; }
-  const speed = globalThis.__coupBotSpeed || 1;
-  const delay = () => (900 + rnd() * 800 + (now - room.flashAt < 2500 ? 1800 : 0)) * speed;
+  const speed = globalThis.__coupBotSpeed || 1; // hanya dipakai tes untuk mempercepat
+  const delay = () => (900 + rnd() * 800 + (now - room.flashAt < 2500 ? 1800 : 0)) * speed; // beri waktu animasi tantangan
   if (room.botAt === null) { room.botAt = now + delay(); return true; }
   if (now < room.botAt) return false;
   const seat = seats[Math.floor(rnd() * seats.length)];
@@ -160,13 +163,14 @@ export function tick(room, now, rnd = Math.random) {
   return true;
 }
 
-// dispatcher utama ruangan
+// Satu pintu masuk untuk server maupun mode lokal.
 export function dispatch(room, body, now = Date.now(), rnd = Math.random) {
   const r = handle(room, body, now);
   if (!r.ok) return r;
   let persist = r.persist;
   if (tick(room, now, rnd)) persist = true;
   if (r.left || r.kicked) {
+    // yang keluar/dikeluarkan tidak lagi punya kursi; kirim konfirmasi tanpa snapshot
     return { ok: true, persist, out: { ok: true, left: true } };
   }
   const snap = snapshot(room, body.token, now);

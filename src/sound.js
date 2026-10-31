@@ -1,4 +1,4 @@
-// sintesis audio chiptune (WebAudio)
+// Efek suara chiptune disintesis dengan WebAudio — tanpa file audio, jadi ringan.
 let ctx = null;
 let muted = false;
 try { muted = localStorage.getItem('coup.muted') === '1'; } catch { /* */ }
@@ -37,7 +37,7 @@ function noise({ t = 0.12, v = 0.08, at = 0, rate = 1 }) {
   const d = buf.getChannelData(0);
   let last = 0;
   for (let i = 0; i < len; i++) {
-    if (i % Math.max(1, Math.round(rate)) === 0) last = Math.random() * 2 - 1;
+    if (i % Math.max(1, Math.round(rate)) === 0) last = Math.random() * 2 - 1; // sample-hold = noise "8-bit"
     d[i] = last;
   }
   const src = c.createBufferSource();
@@ -76,5 +76,5 @@ export function setMuted(m) {
   try { localStorage.setItem('coup.muted', m ? '1' : '0'); } catch { /* */ }
   if (!m) sfx.click();
 }
-
+// Browser memblokir audio sebelum ada interaksi; buka di gestur pertama.
 export function unlockAudio() { try { ac(); } catch { /* */ } }

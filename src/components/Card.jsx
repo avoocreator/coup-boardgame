@@ -4,11 +4,14 @@ import { CHAR_INFO } from '../game/rules.js';
 import { useT } from '../i18n/index.js';
 
 export const asset = (name) => `${import.meta.env.BASE_URL}cards/${name}.png`;
+// easing "bertahap" supaya gerakan terasa seperti animasi pixel/sprite
 export const uiAsset = (name) => `${import.meta.env.BASE_URL}ui/${name}.png`;
-// easing ala animasi retro
 export const stepped = (n) => (t) => Math.floor(t * n) / n;
 
-// kartu pixel
+/**
+ * Kartu pixel. `char` null = tidak diketahui (selalu tertutup).
+ * faceUp: tampil depan. dead: pengaruh sudah terbuka/hilang (abu-abu + tengkorak).
+ */
 export default function Card({ char, faceUp = true, dead = false, size = 'md', selectable = false, selected = false, onClick, delay = 0, deal = true, tilt = 0 }) {
   const t = useT();
   const info = char ? CHAR_INFO[char] : null;

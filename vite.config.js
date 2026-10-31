@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// handler /api/game buat dev lokal
+// Saat `npm run dev`, endpoint /api/game dilayani langsung oleh Vite (penyimpanan memori),
+// jadi multiplayer bisa dicoba lokal tanpa Vercel CLI / Redis.
 function devApi() {
   return {
     name: 'dev-api',
