@@ -1,4 +1,3 @@
-// Semua teks tampilan. Default: English. Tambah bahasa baru = tambah satu objek di sini.
 export const LANGS = { en: 'English', id: 'Bahasa Indonesia' };
 
 export const STR = {

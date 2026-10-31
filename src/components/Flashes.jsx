@@ -4,7 +4,7 @@ import Card, { stepped } from './Card.jsx';
 import { charName, useT } from '../i18n/index.js';
 import { sfx } from '../sound.js';
 
-// Antrian animasi besar di tengah layar: tantangan (kartu dibuka) & kehilangan pengaruh.
+// animasi kartu di tengah layar
 function Reveal({ char, delay = 0.5 }) {
   const [up, setUp] = useState(false);
   useEffect(() => {
