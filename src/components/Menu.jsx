@@ -47,7 +47,7 @@ export default function Menu({ session, snap, initialCode, onRules, onSettings }
         {snap.status === 'error' && snap.error && <div className="status err">{t(snap.error)}</div>}
         {snap.notice && <div className="status err">{t(snap.notice)}</div>}
       </div>
-      <GameMaster text={t('gm.menu')} size={3} />
+      <GameMaster text={t('gm.menu')} size={2.5} />
       <div className="row">
         <Btn kind="small" onClick={onRules}>{t('menu.rules')}</Btn>
         <Btn kind="small" onClick={onSettings}>⚙ {t('menu.settings')}</Btn>

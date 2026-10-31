@@ -7,7 +7,8 @@ import { fmtLog, useT } from '../i18n/index.js';
  * Game Master: wajah pixel dari wasit server. Dia yang "memegang" kartu & dek — pemain hanya melihat apa
  * yang diumumkannya. Punya animasi idle/kedip, dan bicara (mulut bergerak) saat gelembung chat mengetik.
  */
-export default function GameMaster({ text, kind = 'info', mood = 'idle', size = 3 }) {
+export default function GameMaster({ text, kind = 'info', mood = 'idle', size = 2 }) {
+  const t = useT();
   const [n, setN] = useState(0);
   useEffect(() => {
     setN(0);
@@ -20,13 +21,16 @@ export default function GameMaster({ text, kind = 'info', mood = 'idle', size = 
   const cls = mood === 'cheer' ? 'cheer' : talking ? 'talk' : 'idle';
   return (
     <div className="gm">
-      <motion.div
-        className={`gm-sprite ${cls}`}
-        style={{ '--s': size, backgroundImage: `url(${uiAsset('gm')})` }}
-        initial={{ y: -30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: stepped(6) }}
-      />
+      <div className="gm-who">
+        <motion.div
+          className={`gm-sprite ${cls}`}
+          style={{ '--s': size, backgroundImage: `url(${uiAsset('gm')})` }}
+          initial={{ y: -30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: stepped(6) }}
+        />
+        <div className="gm-plate"><b>{t('gm.name')}</b><small>{t('gm.role')}</small></div>
+      </div>
       {text && (
         <motion.div
           key={text}
@@ -35,7 +39,7 @@ export default function GameMaster({ text, kind = 'info', mood = 'idle', size = 
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.2, ease: stepped(3) }}
         >
-          <span className="gm-name">GM</span>
+          <span className="gm-name">{t('gm.name')}</span>
           <span>{text.slice(0, n)}</span>
           <span className="caret" />
         </motion.div>

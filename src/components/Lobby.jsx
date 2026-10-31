@@ -21,7 +21,7 @@ export default function Lobby({ session, snap, onSettings }) {
     <div className="lobby">
       <div className="panel px lobby-box">
         <h2>{t('lobby.title')}</h2>
-        <GameMaster text={isHost ? t('gm.lobby') : t('gm.lobbyGuest')} size={3} />
+        <GameMaster text={isHost ? t('gm.lobby') : t('gm.lobbyGuest')} size={2.5} />
         {!snap.offline && (
           <>
             <div className="codebox">

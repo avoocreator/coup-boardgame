@@ -200,7 +200,7 @@ button { font-family: inherit; }
 
 /* ---------- Game Master ---------- */
 .gm { display: flex; align-items: flex-end; gap: 8px; min-width: 0; max-width: 100%; }
-.gm-sprite { --s: 3; width: calc(32px * var(--s)); height: calc(42px * var(--s)); flex: none; background-size: 600% 100%; background-repeat: no-repeat; background-position: 0 0; image-rendering: pixelated; }
+.gm-sprite { --s: 2; width: calc(64px * var(--s) * var(--k, 1)); height: calc(64px * var(--s) * var(--k, 1)); flex: none; background-size: 600% 100%; background-repeat: no-repeat; background-position: 0 0; image-rendering: pixelated; }
 .gm-sprite.idle { animation: gm-idle 8s step-end infinite; }
 .gm-sprite.talk { animation: gm-talk .36s step-end infinite; }
 .gm-sprite.cheer { background-position: 100% 0; animation: gm-cheer .5s step-end infinite; }
@@ -237,7 +237,7 @@ button { font-family: inherit; }
 .nocards { font-size: 34px; color: var(--dim); padding: 18px 10px; }
 .deck-slot { color: var(--gold); font-family: var(--f-title); font-size: 18px; }
 .deck-slot span { display: inline-block; animation: blink .6s steps(2, jump-none) infinite; }
-@media (max-width: 640px) { .gm-bubble { max-width: 200px; font-size: 19px; } .gm-sprite { --s: 2.4; } .msgpanel { top: 56px; right: 8px; } }
+@media (max-width: 640px) { .gm-bubble { max-width: 200px; font-size: 19px; } .gm-sprite { --k: .78; } .msgpanel { top: 56px; right: 8px; } }
 
 /* ---------- tombol lanjut di layar reveal ---------- */
 .flash-back { flex-direction: column; }
@@ -250,3 +250,9 @@ button { font-family: inherit; }
 .card.flat .card-inner { transform-style: flat; }
 .card.flat .face { backface-visibility: visible; -webkit-backface-visibility: visible; }
 .card.flat .face.back { transform: none; }
+
+/* papan nama Game Master */
+.gm-who { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
+.gm-plate { display: flex; flex-direction: column; align-items: center; line-height: 1; padding: 4px 8px; background: #15122b; box-shadow: 0 -3px 0 0 var(--edge), 0 3px 0 0 var(--edge), -3px 0 0 0 var(--edge), 3px 0 0 0 var(--edge); margin: 3px 3px 6px; }
+.gm-plate b { font-family: var(--f-title); font-size: 9px; color: var(--gold); letter-spacing: 1px; }
+.gm-plate small { font-family: var(--f-title); font-size: 6px; color: var(--dim); margin-top: 4px; }

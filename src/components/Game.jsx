@@ -62,7 +62,7 @@ function Stage({ v }) {
   if (v.block) sub = <span className="claim"><img className="pix mini" src={asset(v.block.char)} alt="" /> {t('stage.blocks', { name: nm(v.block.blocker), char: CHAR_INFO[v.block.char].name })}</span>;
   return (
     <div className="stage">
-      <GameMaster text={nar?.text} kind={nar?.kind} mood={v.phase === 'over' ? 'cheer' : 'idle'} size={3} />
+      <GameMaster text={nar?.text} kind={nar?.kind} mood={v.phase === 'over' ? 'cheer' : 'idle'} size={2} />
       <div className="stage-mid">
         <div className="stage-text px">
           <div className="stage-main">{status}</div>
