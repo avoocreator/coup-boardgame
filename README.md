@@ -1,3 +1,7 @@
+<p align="right">
+  🌐 <b>Bahasa Indonesia</b> • <a href="README.en.md">English</a>
+</p>
+
 # COUP · Pixel Court
 
 > Adaptasi digital game deduksi sosial & *bluffing* **Coup** bergaya retro pixel art, dilengkapi sintesis audio chiptune prosedural dan arsitektur *server-authoritative* anti-curang.

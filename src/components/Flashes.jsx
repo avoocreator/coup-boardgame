@@ -62,7 +62,7 @@ export default function Flashes({ view, onBusy }) {
             <motion.div className="flash" initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ ease: stepped(5), duration: 0.3 }}>
               <div className="flash-title">{t('flash.challenges', { a: names[cur.challenger], b: names[cur.challenged] })}</div>
               <div className="flash-sub">{t('flash.claimed', { name: names[cur.challenged], char: charName(cur.char) })}</div>
-              <Card char={cur.char} faceUp={step === 1} size="xl" deal={false} />
+              <Card char={cur.char} faceUp={step === 1} size="xl" deal={false} flat />
               {step === 0 ? (
                 <>
                   <Btn kind="gold" autoFocus onClick={reveal}>{t('flash.reveal')}</Btn>
@@ -91,7 +91,7 @@ export default function Flashes({ view, onBusy }) {
                 animate={leaving ? { y: 230, scale: 0.22, opacity: 0 } : { y: 0, scale: 1, opacity: 1 }}
                 transition={{ duration: 0.45, ease: stepped(6) }}
               >
-                <Card char={cur.char} faceUp={step === 1} size="xl" deal={false} />
+                <Card char={cur.char} faceUp={step === 1} size="xl" deal={false} flat />
               </motion.div>
               <div className="flash-sub">{loseSub(cur)}</div>
               <Btn kind="green" autoFocus disabled={leaving} onClick={next}>{t('flash.ok')}{more ? ` (${queue.length - 1})` : ''}</Btn>

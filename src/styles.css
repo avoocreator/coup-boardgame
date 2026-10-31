@@ -244,3 +244,9 @@ button { font-family: inherit; }
 .flash-foot { position: absolute; bottom: 24px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 64px; justify-content: flex-end; }
 .hintline { color: var(--dim); font-size: 20px; }
 @media (max-width: 640px) { .flash-foot { bottom: 14px; } }
+
+/* kartu datar di popup: tanpa 3D, sisi belakang tidak diputar */
+.card.flat { perspective: none; }
+.card.flat .card-inner { transform-style: flat; }
+.card.flat .face { backface-visibility: visible; -webkit-backface-visibility: visible; }
+.card.flat .face.back { transform: none; }
