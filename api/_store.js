@@ -52,8 +52,31 @@ function memoryStore() {
 
 export function getStore() {
   const env = process.env;
-  const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
-  const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
+  let url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
+  let token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
+
+  // cari bila variabel memakai prefix custom
+  if (!url || !token) {
+    for (const [k, v] of Object.entries(env)) {
+      if (!url && /REST.*URL/i.test(k) && v) url = v;
+      if (!token && /REST.*TOKEN/i.test(k) && v) token = v;
+    }
+  }
+
+  // ekstrak dari REDIS_URL bila dari Upstash (rediss://default:token@host:6379)
+  if (!url || !token) {
+    const rurl = env.REDIS_URL || env.KV_URL || env.UPSTASH_REDIS_URL;
+    if (rurl) {
+      try {
+        const u = new URL(rurl.replace(/^rediss?:/, 'https:'));
+        if (u.hostname && u.password) {
+          url = `https://${u.hostname}`;
+          token = decodeURIComponent(u.password);
+        }
+      } catch { /* */ }
+    }
+  }
+
   if (url && token) return redisStore(url, token);
   if (env.VERCEL) return null;
   return memoryStore();

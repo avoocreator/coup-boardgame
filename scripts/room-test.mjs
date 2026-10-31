@@ -103,6 +103,9 @@ r = await call({ op: 'create', name: 'R', token: tok('redis1') }); assert(r.ok &
 const rc = r.snap.code;
 r = await call({ op: 'join', code: rc, name: 'S', token: tok('redis2') }); assert(r.ok && r.snap.players.length === 2, 'redis join');
 delete process.env.KV_REST_API_URL; delete process.env.KV_REST_API_TOKEN;
+process.env.REDIS_URL = 'rediss://default:x@fake:6379';
+r = await call({ op: 'create', name: 'R3', token: tok('redis3') }); assert(r.ok, 'redis create via REDIS_URL');
+delete process.env.REDIS_URL;
 process.env.VERCEL = '1';
 assert((await call({ op: 'create', name: 'N', token: tok('nostore') })).error === 'err.noStorage', 'produksi tanpa Redis ditolak jelas');
 
