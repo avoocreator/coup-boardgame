@@ -76,6 +76,13 @@ export const STR = {
     'err.method': 'Bad request.', 'err.badRequest': 'Bad request.', 'err.busy': 'Server is busy, try again.',
     'err.server': 'Server error. Try again in a moment.', 'err.noStorage': 'Server storage is not configured (add Upstash Redis in Vercel — see README).',
     'err.network': "Can't reach the server. Check your connection.", 'err.lost': 'Connection lost.',
+    'Ruangan tidak ditemukan. Cek kodenya.': 'Room not found. Check the code.',
+    'Permainan sudah berjalan.': 'The game has already started.',
+    'Ruangan penuh (maks 6 pemain).': 'The room is full (max 6 players).',
+    'Kamu dikeluarkan dari ruangan.': 'You were kicked from the room.',
+    'Tidak bisa terhubung ke ruangan. Cek kode atau koneksi internetmu.': "Can't connect to the room. Check the code or your internet connection.",
+    'Koneksi ke host terputus.': 'Connection to host lost.',
+    'Koneksi ke host bermasalah.': 'Connection to host error.',
   },
   id: {
     'menu.tag': 'Bohongi, tantang, dan rebut tahta.',

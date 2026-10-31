@@ -75,8 +75,8 @@ Each player starts with 2 secret cards representing court nobles with unique abi
 [![Vite](https://img.shields.io/badge/Vite_5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
 [![Web Audio API](https://img.shields.io/badge/Web_Audio_API-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-[![Vercel](https://img.shields.io/badge/Vercel_Serverless-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
-[![Upstash Redis](https://img.shields.io/badge/Upstash_Redis-00E9A3?style=for-the-badge&logo=redis&logoColor=black)](https://upstash.com/)
+[![PeerJS](https://img.shields.io/badge/PeerJS_WebRTC-FF4088?style=for-the-badge&logo=webrtc&logoColor=white)](https://peerjs.com/)
+[![Vercel](https://img.shields.io/badge/Vercel_Hosting-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 [![Python](https://img.shields.io/badge/Python_3-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 
 ### 1. Frontend & State Management
@@ -90,10 +90,11 @@ This project requires **0 KB of audio downloads**. Every sound effect (button cl
 * `sawtooth` oscillators for tension cues and failed challenges.
 * Sample-and-hold pseudo-random noise buffers to simulate card shuffles and retro 8-bit noise.
 
-### 3. Serverless Backend & Optimistic Concurrency Control
-* **Vercel Serverless Function (`api/game.js`):** A stateless Node.js endpoint acting as the authoritative Game Master to validate Coup moves.
-* **Upstash Redis REST API & Atomic Lua Scripts:** Room storage leverages an atomic **Compare-and-Swap (CAS)** pattern via Lua scripts. This optimistic concurrency control ensures concurrent requests never overwrite each other (*zero race conditions*).
-* **Vite Middleware Dev Server (`vite.config.js`):** Uses `configureServer` and `server.ssrLoadModule` to execute the `/api/game` handler against local memory during dev mode, eliminating any local Redis or Vercel CLI requirements.
+### 3. Peer-to-Peer Multiplayer Architecture (WebRTC & PeerJS)
+* **Host-Authoritative WebRTC:** The room creator (Host) acts as the authoritative Game Master, validating legal Coup moves, managing hidden deck state, and driving bot automation.
+* **View Privacy (Cheat-Proof):** The host distributes only filtered views to connected peers (hiding unrevealed opponent cards), preventing DevTools inspection exploits.
+* **Zero Backend & Zero Database (0 KB Storage):** Communication flows directly browser-to-browser via WebRTC data channels utilizing PeerJS broker signaling and STUN/TURN relays (OpenRelay). No serverless functions, database subscriptions, or cloud environment variables required.
+* **Auto-Takeover & Seat Reconnection:** When a player disconnects for more than 12 seconds, an intelligent bot automatically steps in so the game never stalls. Reconnecting players reclaim their original seat seamlessly via their persistent session token.
 
 ### 4. Graphic Asset Pipeline (Python & Pillow)
 Card and UI art originates from SVG vector sources in `assets-src/`. Automated Python generator scripts (`scripts/make-pixel-art.py` and `scripts/make-gm.py`) rasterize vectors to crisp pixel dimensions, map color palettes, and output PNG sprite sheets ready for production.

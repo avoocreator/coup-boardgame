@@ -75,12 +75,12 @@ Setiap pemain memegang 2 kartu rahasia di awal permainan. Setiap kartu mewakili 
 [![Vite](https://img.shields.io/badge/Vite_5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
 [![Web Audio API](https://img.shields.io/badge/Web_Audio_API-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-[![Vercel](https://img.shields.io/badge/Vercel_Serverless-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
-[![Upstash Redis](https://img.shields.io/badge/Upstash_Redis-00E9A3?style=for-the-badge&logo=redis&logoColor=black)](https://upstash.com/)
+[![PeerJS](https://img.shields.io/badge/PeerJS_WebRTC-FF4088?style=for-the-badge&logo=webrtc&logoColor=white)](https://peerjs.com/)
+[![Vercel](https://img.shields.io/badge/Vercel_Hosting-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 [![Python](https://img.shields.io/badge/Python_3-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 
 ### 1. Frontend & Manajemen State
-* **React 18 & External Store:** Menggunakan `useSyncExternalStore` untuk menyinkronkan snapshot state dari server ke antarmuka React secara reaktif tanpa re-render yang redundan.
+* **React 18 & External Store:** Menggunakan `useSyncExternalStore` untuk menyinkronkan snapshot state dari sesi game ke antarmuka React secara reaktif tanpa re-render yang redundan.
 * **Framer Motion:** Mengelola animasi transisi kartu, pergerakan layout 3D saat kartu dibagikan (*card deal & flip*), dan pop-up notifikasi tantangan.
 * **Custom Pixel Easing:** Pergerakan animasi kartu menggunakan *step-based easing function* khusus agar transisi gerakan terasa seperti animasi frame sprite retro 8-bit/16-bit.
 
@@ -90,10 +90,11 @@ Aplikasi ini memiliki ukuran unduhan audio **0 KB**. Seluruh efek suara (klik to
 * Gelombang `sawtooth` untuk peringatan tantangan dan kegagalan.
 * Sample-and-hold pseudo-random buffer untuk menyimulasikan suara gesekan kartu (*white noise* khas game konsol klasik).
 
-### 3. Backend Serverless & Optimistic Concurrency Control
-* **Vercel Serverless Function (`api/game.js`):** Endpoint stateless yang bertindak sebagai Game Master tunggal untuk memvalidasi seluruh aksi legal aturan Coup.
-* **Upstash Redis REST API & Atomic Lua Script:** Penyimpanan data room menggunakan pola **Compare-and-Swap (CAS)** via skrip atomik Lua. Pendekatan *Optimistic Concurrency Control* ini memastikan dua request pemain yang masuk pada milidetik yang sama tidak saling menimpa (*zero race conditions*).
-* **Vite Middleware Dev Server (`vite.config.js`):** Menggunakan hook `configureServer` dan `server.ssrLoadModule` untuk mengeksekusi endpoint `/api/game` dengan penyimpanan memori lokal saat pengembangan offline, tanpa ketergantungan pada Redis eksternal atau Vercel CLI.
+### 3. Arsitektur Multiplayer P2P (WebRTC & PeerJS)
+* **Host-Authoritative WebRTC:** Pembuat ruangan (Host) bertindak sebagai Game Master berotoritas penuh yang memvalidasi giliran, mengelola dek kartu rahasia, dan mengendalikan bot otomatis.
+* **Privasi View (Anti-Curang):** Host hanya mendistribusikan *filtered view* ke setiap pemain (kartu lawan disembunyikan), sehingga kebal dari intipan inspect DevTools.
+* **Tanpa Server Backend & Database (0 KB Storage):** Komunikasi antar pemain berjalan langsung (*browser-to-browser*) lewat data channel WebRTC dengan sinyalisasi PeerJS gratis dan STUN/TURN fallback (OpenRelay). Tidak membutuhkan server backend berbayar atau database Redis di Vercel.
+* **Auto-Takeover & Seat Reconnection:** Jika koneksi pemain terputus selama lebih dari 12 detik, bot otomatis mengambil alih agar jalannya permainan tidak terhenti. Pemain yang terputus dapat merebut kembali kursinya kapan saja dengan token sesi browser yang sama.
 
 ### 4. Pipeline Aset Grafis (Python & Pillow)
 Aset kartu dan UI bersumber dari file vektor SVG di `assets-src/`. Skrip generator otomatis berbasis Python (`scripts/make-pixel-art.py` dan `scripts/make-gm.py`) merender vektor tersebut ke resolusi pixel murni, memetakan palet warna, dan menghasilkan sprite sheet PNG yang siap disajikan ke publik.
