@@ -1,49 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">
 <defs>
-<clipPath id="tor"><path d="M66 260 C 66 206, 92 178, 128 176 C 164 178, 190 206, 190 260Z"/></clipPath>
-<radialGradient id="hl" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#8fe0d0"/><stop offset=".55" stop-color="#3f9a92"/><stop offset="1" stop-color="#27706c"/></radialGradient>
+<linearGradient id="skin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1de"/><stop offset="1" stop-color="#f3d9bd"/></linearGradient>
 </defs>
 <g transform="translate(0 0)">
-<!-- kartu melayang -->
-<g transform="translate(238 176) rotate(20)"><rect x="-13" y="-19" width="26" height="38" rx="3" fill="#3f9a92" stroke="#12080a" stroke-width="3"/><rect x="-9" y="-15" width="18" height="30" rx="2" fill="none" stroke="#f2dcae" stroke-width="1.6"/><path d="M0 -7 L5 0 L0 7 L-5 0Z" fill="#e8431a"/></g>
-<!-- tongkat -->
-<path d="M206 262 L222 144" stroke="#12080a" stroke-width="13" stroke-linecap="round"/><path d="M206 262 L222 144" stroke="#4a2a20" stroke-width="7" stroke-linecap="round"/>
-<circle cx="224" cy="130" r="17" fill="url(#hl)" stroke="#12080a" stroke-width="4"/><path d="M212 125 Q224 114 236 125" stroke="#f2dcae" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="215" y="143" width="17" height="7" rx="2" fill="#e8431a" stroke="#12080a" stroke-width="2.5"/>
-<!-- badan: rompi belang merah-hitam + jahitan X -->
-<g clip-path="url(#tor)">
-<rect x="50" y="170" width="160" height="100" fill="#e8431a"/>
-<path d="M76 176v100M92 176v100M164 176v100M180 176v100" stroke="#12080a" stroke-width="8"/>
-<path d="M104 178 L152 178 L162 270 L94 270Z" fill="#12080a"/>
-<path d="M62 190 Q 90 178 118 186" stroke="#a82a10" stroke-width="6" fill="none"/>
-</g>
-<path d="M66 262 C 66 206, 92 178, 128 176 C 164 178, 190 206, 190 262" fill="none" stroke="#12080a" stroke-width="4"/>
-<g stroke="#8fe0d0" stroke-width="3.4" stroke-linecap="round"><path d="M121 192l14 12M135 192l-14 12"/><path d="M122 214l14 12M136 214l-14 12"/><path d="M123 236l14 12M137 236l-14 12"/></g>
-<!-- lengan kiri (tangan menyapa) -->
-<path d="M80 212 Q 60 214 48 214" stroke="#12080a" stroke-width="20" stroke-linecap="round" fill="none"/>
-<path d="M80 212 Q 60 214 48 214" stroke="#27706c" stroke-width="13" stroke-linecap="round" fill="none"/>
-<g transform="translate(40 200) rotate(-6)"><ellipse cx="0" cy="4" rx="20" ry="15" fill="#12080a" stroke="#8fe0d0" stroke-width="1.8"/><path d="M-16 8 Q-30 2 -34 -10 Q-26 -10 -16 -2Z" fill="#12080a" stroke="#8fe0d0" stroke-width="1.6" stroke-linejoin="round"/><path d="M-5 0 Q-5.3 -22 0 -30 Q0.7 -22 5 0Z" fill="#12080a" stroke="#8fe0d0" stroke-width="1.6" stroke-linejoin="round" transform="rotate(-46)"/><path d="M-5 0 Q-4.1 -22 0 -38 Q1.9 -22 5 0Z" fill="#12080a" stroke="#8fe0d0" stroke-width="1.6" stroke-linejoin="round" transform="rotate(-22.0)"/><path d="M-5 0 Q-2.9 -22 0 -40 Q3.1 -22 5 0Z" fill="#12080a" stroke="#8fe0d0" stroke-width="1.6" stroke-linejoin="round" transform="rotate(3.0)"/><path d="M-5 0 Q-1.6 -22 0 -34 Q4.4 -22 5 0Z" fill="#12080a" stroke="#8fe0d0" stroke-width="1.6" stroke-linejoin="round" transform="rotate(28)"/></g>
-<circle cx="80" cy="212" r="19" fill="url(#hl)" stroke="#12080a" stroke-width="4"/><path d="M68 206 Q78 197 90 200" stroke="#f2dcae" stroke-width="3.4" fill="none" stroke-linecap="round"/>
-<!-- lengan kanan memegang tongkat -->
-<circle cx="178" cy="214" r="19" fill="url(#hl)" stroke="#12080a" stroke-width="4"/><path d="M166 207 Q176 198 188 201" stroke="#f2dcae" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-<circle cx="208" cy="226" r="11" fill="#12080a" stroke="#8fe0d0" stroke-width="1.8"/><path d="M184 218 L202 224" stroke="#12080a" stroke-width="12" stroke-linecap="round"/>
-<!-- kerah ruffle -->
-<ellipse cx="128" cy="160" rx="38" ry="13" fill="#27706c" stroke="#12080a" stroke-width="3.5"/>
-<path d="M98.4 150.1 Q77.0 158.7 55.6 171.1 Q81.2 166.5 102.8 158.5 Z" fill="#3f9a92" stroke="#12080a" stroke-width="3.5" stroke-linejoin="round"/><path d="M100.6 154.3 L61.4 170.0" stroke="#f2dcae" stroke-width="2.4" stroke-linecap="round" opacity=".85"/><path d="M99.3 155.5 Q82.4 168.4 69.7 184.9 Q94.8 174.7 112.5 162.3 Z" fill="#4eb0a6" stroke="#12080a" stroke-width="3.5" stroke-linejoin="round"/><path d="M105.9 158.9 L74.4 182.8" stroke="#f2dcae" stroke-width="2.4" stroke-linecap="round" opacity=".85"/><path d="M106.1 160.2 Q97.1 176.0 95.6 194.6 Q115.1 179.5 125.4 164.0 Z" fill="#3f9a92" stroke="#12080a" stroke-width="3.5" stroke-linejoin="round"/><path d="M115.7 162.1 L98.2 191.6" stroke="#f2dcae" stroke-width="2.4" stroke-linecap="round" opacity=".85"/><path d="M117.2 163.2 Q118.0 180.0 128.0 198.0 Q138.0 180.0 138.8 163.2 Z" fill="#4eb0a6" stroke="#12080a" stroke-width="3.5" stroke-linejoin="round"/><path d="M128.0 163.2 L128.0 194.8" stroke="#f2dcae" stroke-width="2.4" stroke-linecap="round" opacity=".85"/><path d="M130.6 164.0 Q140.9 179.5 160.4 194.6 Q158.9 176.0 149.9 160.2 Z" fill="#3f9a92" stroke="#12080a" stroke-width="3.5" stroke-linejoin="round"/><path d="M140.3 162.1 L157.8 191.6" stroke="#f2dcae" stroke-width="2.4" stroke-linecap="round" opacity=".85"/><path d="M143.5 162.3 Q161.2 174.7 186.3 184.9 Q173.6 168.4 156.7 155.5 Z" fill="#4eb0a6" stroke="#12080a" stroke-width="3.5" stroke-linejoin="round"/><path d="M150.1 158.9 L181.6 182.8" stroke="#f2dcae" stroke-width="2.4" stroke-linecap="round" opacity=".85"/><path d="M153.2 158.5 Q174.8 166.5 200.4 171.1 Q179.0 158.7 157.6 150.1 Z" fill="#3f9a92" stroke="#12080a" stroke-width="3.5" stroke-linejoin="round"/><path d="M155.4 154.3 L194.6 170.0" stroke="#f2dcae" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
-<ellipse cx="128" cy="155" rx="24" ry="8" fill="#12080a" opacity=".55"/>
-<g transform="translate(0 -10)">
-<!-- tanduk topi -->
-<path d="M92 78 C 58 34, 12 34, 14 92" stroke="#12080a" stroke-width="27" stroke-linecap="round" fill="none"/><path d="M92 78 C 58 34, 12 34, 14 92" stroke="#e8431a" stroke-width="19" stroke-linecap="round" fill="none"/><path d="M92 78 C 58 34, 12 34, 14 92" stroke="#12080a" stroke-width="19" stroke-linecap="butt" fill="none" stroke-dasharray="16 22" stroke-dashoffset="2"/>
-<path d="M164 78 C 198 30, 246 36, 244 88" stroke="#12080a" stroke-width="27" stroke-linecap="round" fill="none"/><path d="M164 78 C 198 30, 246 36, 244 88" stroke="#e8431a" stroke-width="19" stroke-linecap="round" fill="none"/><path d="M164 78 C 198 30, 246 36, 244 88" stroke="#12080a" stroke-width="19" stroke-linecap="butt" fill="none" stroke-dasharray="16 22" stroke-dashoffset="8"/>
-<g><circle cx="14" cy="100" r="15" fill="url(#hl)" stroke="#12080a" stroke-width="4"/><circle cx="244" cy="96" r="15" fill="url(#hl)" stroke="#12080a" stroke-width="4"/><path d="M6 96 Q14 88 22 96M236 92 Q244 84 252 92" stroke="#f2dcae" stroke-width="3" fill="none" stroke-linecap="round"/></g>
-<!-- kepala/topeng -->
-<ellipse cx="128" cy="116" rx="58" ry="55" fill="url(#hl)" stroke="#12080a" stroke-width="4.5"/>
-<path d="M170 76 Q190 116 168 160" stroke="#27706c" stroke-width="10" fill="none" opacity=".45" stroke-linecap="round"/>
-<path d="M90 70 Q96 92 88 108 M168 74 Q164 90 172 100" stroke="#12080a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-<ellipse cx="104" cy="112" rx="15" ry="17" fill="#12080a"/><ellipse cx="152" cy="112" rx="15" ry="17" fill="#12080a"/>
-<circle cx="98" cy="104" r="3.4" fill="#2f6b68"/><circle cx="146" cy="104" r="3.4" fill="#2f6b68"/>
-<path d="M80 130 Q128 176 176 130" fill="none" stroke="#12080a" stroke-width="8" stroke-linecap="round"/><path d="M91.5 133.7 L91.5 146.7" stroke="#12080a" stroke-width="4" stroke-linecap="round"/><path d="M108.8 143.3 L108.8 156.3" stroke="#12080a" stroke-width="4" stroke-linecap="round"/><path d="M128.0 147.0 L128.0 160.0" stroke="#12080a" stroke-width="4" stroke-linecap="round"/><path d="M147.2 143.3 L147.2 156.3" stroke="#12080a" stroke-width="4" stroke-linecap="round"/><path d="M164.5 133.7 L164.5 146.7" stroke="#12080a" stroke-width="4" stroke-linecap="round"/>
-<!-- topi: kubah + pita -->
-<path d="M68 98 C 60 44, 196 44, 188 98 Q128 74 68 98Z" fill="#e8431a" stroke="#12080a" stroke-width="4.5" stroke-linejoin="round"/>
-<path d="M104 60 Q100 82 106 90M128 54 L128 82M152 60 Q156 82 150 90" stroke="#12080a" stroke-width="6.5" fill="none" stroke-linecap="round"/>
-<path d="M66 98 Q128 70 190 98" stroke="#12080a" stroke-width="13" fill="none" stroke-linecap="round"/><path d="M72 97 Q128 72 184 97" stroke="#f2dcae" stroke-width="2.4" fill="none" stroke-dasharray="5 7" stroke-linecap="round"/>
-</g></g></svg>
+<!-- bahu + jaket -->
+<path d="M52 262 C 54 214, 84 196, 128 194 C 172 196, 202 214, 204 262Z" fill="#232c5e" stroke="#14101f" stroke-width="4.5"/>
+<path d="M84 202 L128 262 L110 200Z" fill="#3b4a8f" stroke="#14101f" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M172 202 L128 262 L146 200Z" fill="#9c1f38" stroke="#14101f" stroke-width="3.5" stroke-linejoin="round"/>
+<!-- turtleneck krem + choker -->
+<path d="M100 186 L100 208 Q128 222 156 208 L156 186Z" fill="#f3ead6" stroke="#14101f" stroke-width="4"/>
+<path d="M108 192 L108 206 M118 194 L118 210 M128 195 L128 212 M138 194 L138 210 M148 192 L148 206" stroke="#d9cdb0" stroke-width="2.6"/>
+<path d="M102 190 Q128 202 154 190" stroke="#14101f" stroke-width="6" fill="none" stroke-linecap="round"/>
+<circle cx="128" cy="222" r="15" fill="#e0a43a" stroke="#14101f" stroke-width="3.5"/><path d="M119.8 217.5 Q128.0 208.5 135.5 216.0" stroke="#ffe08a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M114.5 224.2 L141.5 224.2" stroke="#a8691e" stroke-width="2.6"/><circle cx="128" cy="229.5" r="2.6" fill="#14101f"/>
+<!-- tanduk topi (belakang kepala) -->
+<path d="M66 100 C 40 120, 28 150, 38 172" stroke="#14101f" stroke-width="40" stroke-linecap="round" fill="none"/>
+<path d="M66 100 C 40 120, 28 150, 38 172" stroke="#d8344a" stroke-width="32" stroke-linecap="round" fill="none"/>
+<path d="M190 94 C 214 96, 226 120, 222 150" stroke="#14101f" stroke-width="40" stroke-linecap="round" fill="none"/>
+<path d="M190 94 C 214 96, 226 120, 222 150" stroke="#3b4a8f" stroke-width="32" stroke-linecap="round" fill="none"/>
+<circle cx="38" cy="180" r="15" fill="#e0a43a" stroke="#14101f" stroke-width="3.5"/><path d="M29.8 175.5 Q38.0 166.5 45.5 174.0" stroke="#ffe08a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M24.5 182.2 L51.5 182.2" stroke="#a8691e" stroke-width="2.6"/><circle cx="38" cy="187.5" r="2.6" fill="#14101f"/><circle cx="222" cy="158" r="15" fill="#e0a43a" stroke="#14101f" stroke-width="3.5"/><path d="M213.8 153.5 Q222.0 144.5 229.5 152.0" stroke="#ffe08a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M208.5 160.2 L235.5 160.2" stroke="#a8691e" stroke-width="2.6"/><circle cx="222" cy="165.5" r="2.6" fill="#14101f"/>
+<!-- rambut belakang (samping) -->
+<path d="M70 110 C 52 150, 58 190, 76 206 C 88 190, 92 160, 90 118Z" fill="#7f9ad0" stroke="#14101f" stroke-width="4" stroke-linejoin="round"/>
+<path d="M186 110 C 204 150, 198 190, 180 206 C 168 190, 164 160, 166 118Z" fill="#e0405a" stroke="#14101f" stroke-width="4" stroke-linejoin="round"/>
+<!-- wajah -->
+<ellipse cx="128" cy="134" rx="54" ry="50" fill="url(#skin)" stroke="#14101f" stroke-width="4.5"/>
+<path d="M76 134 L66 122 L80 126Z M180 134 L190 122 L176 126Z" fill="#fff1de" stroke="#14101f" stroke-width="3" stroke-linejoin="round"/>
+<!-- poni dua warna -->
+<path d="M72 112 C 70 86, 96 74, 128 74 L128 128 C 118 112, 108 108, 100 128 C 94 120, 84 122, 76 138 C 72 128, 72 120, 72 112Z" fill="#7f9ad0" stroke="#14101f" stroke-width="4" stroke-linejoin="round"/>
+<path d="M184 112 C 186 86, 160 74, 128 74 L128 128 C 140 110, 152 110, 160 128 C 168 118, 176 124, 182 140 C 186 130, 186 120, 184 112Z" fill="#e0405a" stroke="#14101f" stroke-width="4" stroke-linejoin="round"/>
+<path d="M104 84 Q112 100 106 116 M152 84 Q146 100 152 116" stroke="#14101f" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".6"/>
+<!-- mata anime -->
+<ellipse cx="104" cy="146" rx="17" ry="21" fill="#fff" stroke="#14101f" stroke-width="2.4"/><ellipse cx="105" cy="149" rx="13" ry="17" fill="#2fa58a"/><ellipse cx="105" cy="155" rx="12" ry="10" fill="#9bf0d0" opacity=".7"/><ellipse cx="105" cy="148" rx="7" ry="10" fill="#14101f"/><circle cx="98" cy="138" r="5.4" fill="#fff"/><circle cx="111" cy="155" r="2.8" fill="#fff"/><path d="M84 140 Q104 118 124 140" stroke="#14101f" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="146" rx="17" ry="21" fill="#fff" stroke="#14101f" stroke-width="2.4"/><ellipse cx="151" cy="149" rx="13" ry="17" fill="#2fa58a"/><ellipse cx="151" cy="155" rx="12" ry="10" fill="#9bf0d0" opacity=".7"/><ellipse cx="151" cy="148" rx="7" ry="10" fill="#14101f"/><circle cx="158" cy="138" r="5.4" fill="#fff"/><circle cx="145" cy="155" r="2.8" fill="#fff"/><path d="M132 140 Q152 118 172 140" stroke="#14101f" stroke-width="5" fill="none" stroke-linecap="round"/>
+<!-- pipi, hidung, mulut -->
+<ellipse cx="82" cy="164" rx="9" ry="5.5" fill="#f58a98" opacity=".75"/><ellipse cx="174" cy="164" rx="9" ry="5.5" fill="#f58a98" opacity=".75"/>
+<circle cx="128" cy="160" r="3.4" fill="#d8344a" stroke="#14101f" stroke-width="1.6"/>
+<path d="M116 170 Q122 177 128 170 Q134 177 140 170" stroke="#14101f" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- topi: kubah dua warna + pita -->
+<path d="M64 98 C 60 40, 128 22, 128 22 L128 92 Q96 82 64 98Z" fill="#d8344a" stroke="#14101f" stroke-width="4.5" stroke-linejoin="round"/>
+<path d="M192 98 C 196 40, 128 22, 128 22 L128 92 Q160 82 192 98Z" fill="#3b4a8f" stroke="#14101f" stroke-width="4.5" stroke-linejoin="round"/>
+<path d="M76 70 C 80 52, 96 40, 112 34" stroke="#f06a78" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M180 70 C 176 52, 160 40, 144 34" stroke="#7f93d6" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M58 98 Q128 76 198 98" stroke="#14101f" stroke-width="14" fill="none" stroke-linecap="round"/>
+<path d="M64 97 Q128 77 192 97" stroke="#e0a43a" stroke-width="2.6" fill="none" stroke-dasharray="6 7" stroke-linecap="round"/>
+<path d="M104 78 L96 66 L112 72 L116 58 L124 72 L134 56 L138 74 L152 62 L150 78Z" fill="#14101f"/>
+
+</g></svg>
